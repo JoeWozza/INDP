@@ -38,8 +38,8 @@ import folium
 import geopy
 import geopy.distance
 
-point = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT,
-              utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG)
+point = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG,
+              utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT)
 
 # Get polygon as list of coords
 def coord_lister(geom):
@@ -55,12 +55,12 @@ derbs_geoj = folium.GeoJson(data=derbs_poly,
                        style_function=lambda x: {'fillColor': 'orange'})
 
 # Draw approximation of a circle using geopy.destination
-d_obj_v = geopy.distance.distance(kilometers=1)
+d_obj_v = geopy.distance.distance(kilometers=15)
 
 circle_array = []
 for b in range(0,360):
-    coords = ((d_obj_v.destination(point = geopy.Point(point.x, point.y), bearing = b).latitude),
-              (d_obj_v.destination(point = geopy.Point(point.x, point.y), bearing = b).longitude))
+    coords = ((d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).latitude),
+              (d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).longitude))
     circle_array.append(coords)
     
 circle_poly = Polygon([(c[1],c[0]) for c in circle_array])
@@ -82,3 +82,17 @@ derbys_perc = circle_poly.intersection(derbs_poly).area/derbs_poly.area*100
 
 # Percent of circle that is in Derbyshire
 circle_perc = circle_poly.intersection(derbs_poly).area/circle_poly.area*100
+
+
+
+
+
+
+
+
+
+
+
+
+
+
