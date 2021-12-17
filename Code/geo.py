@@ -41,11 +41,6 @@ import geopy.distance
 point = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT,
               utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG)
 
-n_points = 20
-d = 1000
-angles = np.linspace(0,360,n_points)
-polygon = geog.propagate(point,angles,d)
-
 # Get polygon as list of coords
 def coord_lister(geom):
     coords = np.array(geom.exterior.coords)
