@@ -242,6 +242,7 @@ m = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire']
                utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG],
                tiles = 'CartoDB positron')
 derbs_geoj.add_to(m)
+m.save("Derbyshire.html")
 
 def draw_circle(point,radius):
     # Draw approximation of a circle using geopy.destination
@@ -338,6 +339,10 @@ while derbs_perc_tot < 98:
 
 all_geoj = folium.GeoJson(data=all_poly,
                           style_function=lambda x: {'fillColor': 'blue'})
-all_geoj.add_to(m)
-m.save("mymap.html")
+
+c = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT,
+               utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG],
+               tiles = 'CartoDB positron')
+all_geoj.add_to(c)
+c.save("mymap.html")
 
