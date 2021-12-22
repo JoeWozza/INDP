@@ -31,7 +31,8 @@ print(utla_polygons.dtypes)
 import numpy as np
 import json
 import geog
-from shapely.geometry import Point, mapping, Polygon, asPolygon
+from shapely.geometry import Point, mapping, Polygon, MultiPolygon
+from shapely.geometry import shape
 from shapely.ops import cascaded_union
 import shapely
 import pandas as pd
@@ -39,6 +40,7 @@ import folium
 import geopy
 import geopy.distance
 from random import randrange
+import requests
 
 point = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG,
               utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT)
@@ -222,127 +224,329 @@ circle_derbs_area_tot = (circles_comb_poly.intersection(derbs_poly).area)
 
 
 #%% Try to put it all into one step
+# Works for Derbyshire, now need to check for other areas
+res = requests.get(
+    "https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson"
+)
+utla_polygons = gpd.GeoDataFrame.from_features(res.json()).set_crs("epsg:4326")
+
+utla_name = "Derby"
+
+mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
+              'Herefordshire, County of','Telford and Wrekin','Stoke-on-Trent',
+              'Shropshire','North Northamptonshire','West Northamptonshire',
+              'Birmingham','Coventry','Dudley','Sandwell','Solihull','Walsall',
+              'Wolverhampton','Derbyshire','Leicestershire','Lincolnshire',
+              'Nottinghamshire','Staffordshire','Warwickshire','Worcestershire'
+              ]
+
 # Create empty dataframe, to contain centroids and radiuses of circles
-df_derbs = pd.DataFrame(columns = ['lat','long','radius'])
+df_utla = pd.DataFrame(columns = ['utla','lat','long','radius'])
 
-# Get Derbyshire polygon as list of coords
-def coord_lister(geom):
-    coords = np.array(geom.exterior.coords)
-    return (coords)
-
-derbs = (utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].geometry.
-         apply(coord_lister).iloc[0])
-
-derbs_poly = Polygon([(d[0],d[1]) for d in derbs])
-
-derbs_geoj = folium.GeoJson(data=derbs_poly,
-                       style_function=lambda x: {'fillColor': 'orange'})
-
-m = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT,
-               utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG],
-               tiles = 'CartoDB positron')
-derbs_geoj.add_to(m)
-m.save("Derbyshire.html")
-
-def draw_circle(point,radius):
-    # Draw approximation of a circle using geopy.destination
-    d_obj_v = geopy.distance.distance(kilometers=radius)
+for utla_name in mids_utlas:
+    print(utla_name)
+    gdfd = utla_polygons.loc[utla_polygons["CTYUA21NM"]==utla_name].copy()         
     
-    circle_array = []
-    for b in range(0,360):
-        coords = ((d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).latitude),
-                  (d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).longitude))
-        circle_array.append(coords)
+    int_coords = gdfd["geometry"].apply(
+            lambda g: [g3.coords for g2 in g.geoms for g3 in g2.interiors]
+            ).explode().explode()
+    
+    ext = gdfd.explode().geometry.exterior
+    
+    def coord_lister(geom):
+        coords = np.array(geom.coords)
+        return (coords)
+    
+    #ext_coords = (ext.apply(coord_lister).iloc[0])
+    ext_coords = ext.apply(coord_lister)
+    
+    # A bit of a fudge but this seems to work for UTLAs with multiple external 
+    # rings.
+    # Need something like: if int_coords = NaN then only use ext_coords
+    for l in range(0,len(ext_coords)):
+        if l == 0:
+            if len(int_coords) > 1:
+                utla_poly = Polygon(tuple([(e[0],e[1]) for e in ext_coords.iloc[l]]),
+                             ((tuple([(i[0],i[1]) for i in int_coords]),)))
+            else:
+                utla_poly = Polygon(tuple([(e[0],e[1]) for e in ext_coords.iloc[l]]))
+        else:
+            if len(int_coords) > 1:
+                utla_poly = cascaded_union([utla_poly,
+                                            Polygon(tuple([(e[0],e[1]) for e in 
+                                                           ext_coords.iloc[l]]),
+                ((tuple([(i[0],i[1]) for i in int_coords]),)))])
+            else:
+                utla_poly = cascaded_union([utla_poly,
+                                            Polygon(tuple([(e[0],e[1]) for e in 
+                                                           ext_coords.iloc[l]]))])
+    
+    utla_geoj = folium.GeoJson(data=utla_poly,
+                           style_function=lambda x: {'fillColor': 'orange'})
+    
+    m = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LAT,
+                   utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LONG],
+                   tiles = 'CartoDB positron')
+    utla_geoj.add_to(m)
+    m.save("{0}.html".format(utla_name))
+    del int_coords, ext_coords
+    
+    def draw_circle(point,radius):
+        # Draw approximation of a circle using geopy.destination
+        d_obj_v = geopy.distance.distance(kilometers=radius)
         
-    circle_poly = Polygon([(c[1],c[0]) for c in circle_array])
+        circle_array = []
+        for b in range(0,360):
+            coords = ((d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).latitude),
+                      (d_obj_v.destination(point = geopy.Point(point.y, point.x), bearing = b).longitude))
+            circle_array.append(coords)
+            
+        circle_poly = Polygon([(c[1],c[0]) for c in circle_array])
+        
+        # Area of circle that is in target utla
+        circle_utla_area = circle_poly.intersection(utla_poly).area
+        
+        return circle_utla_area, circle_poly
     
-    # Area of circle that is in Derbyshire
-    circle_derbs_area = circle_poly.intersection(derbs_poly).area
+    # 1. Check centroid is in target UTLA (may be that in some cases it is in 
+    # another UTLA that is entirely within the target UTLA or that an irregular 
+    # (e.g. concave) shape means it is in a different UTLA)
+    utla_cent = Point(utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LONG,
+                       utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LAT)
     
-    return circle_derbs_area, circle_poly
-
-# 1. Check centroid is in target UTLA (may be that in some cases it is in 
-# another UTLA that is entirely within the target UTLA or that an irregular 
-# (e.g. concave) shape means it is in a different UTLA)
-derbs_cent = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG,
-                   utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT)
-
-if derbs_cent.within(derbs_poly):
-    #	2. Try to get the biggest circle possible, where the centre is the UTLA 
-    # centroid, that contains no more than X(start with 5)% of other UTLAs: 
-    # start with 1km radius. If circle_perc >= 95, add 1km to radius until 
-    # circle_perc < 95, then use circle with radius = radius - 1.
-    radius = 1
-    circle_poly = draw_circle(derbs_cent,radius)[1]
-    derbs_perc = draw_circle(derbs_cent,radius)[0]/derbs_poly.area*100
-    circle_perc = draw_circle(derbs_cent,radius)[0]/circle_poly.area*100
+    if utla_cent.within(utla_poly):
+        #	2. Try to get the biggest circle possible, where the centre is the UTLA 
+        # centroid, that contains no more than X(start with 5)% of other UTLAs: 
+        # start with 1km radius. If circle_perc >= 95, add 1km to radius until 
+        # circle_perc < 95, then use circle with radius = radius - 1.
+        radius = 1
+        circle_poly = draw_circle(utla_cent,radius)[1]
+        utla_perc = draw_circle(utla_cent,radius)[0]/utla_poly.area*100
+        circle_perc = draw_circle(utla_cent,radius)[0]/circle_poly.area*100
+        
+        while circle_perc >= 95:
+            radius = radius + 1
+            circle_poly = draw_circle(utla_cent,radius)[1]
+            utla_perc = draw_circle(utla_cent,radius)[0]/utla_poly.area*100
+            circle_perc = draw_circle(utla_cent,radius)[0]/circle_poly.area*100
+        
+        all_poly = draw_circle(utla_cent,radius-1)[1]
+        
+        dict_utla = {'utla': utla_name, 'lat': utla_cent.y, 
+                      'long': utla_cent.x, 'radius': radius-1}
+        df_utla = df_utla.append(dict_utla, ignore_index = True)
+        
+    utla_perc_tot = all_poly.intersection(utla_poly).area/utla_poly.area*100
     
-    while circle_perc >= 95:
-        radius = radius + 1
-        circle_poly = draw_circle(derbs_cent,radius)[1]
-        derbs_perc = draw_circle(derbs_cent,radius)[0]/derbs_poly.area*100
-        circle_perc = draw_circle(derbs_cent,radius)[0]/circle_poly.area*100
-    
-    all_poly = draw_circle(derbs_cent,radius-1)[1]
-    
-    dict_derbs = {'lat': derbs_cent.y, 'long': derbs_cent.x, 'radius': radius-1}
-    df_derbs = df_derbs.append(dict_derbs, ignore_index = True)
-    
-derbs_perc_tot = all_poly.intersection(derbs_poly).area/derbs_poly.area*100
-
-while derbs_perc_tot < 98:
-    #	3. Take a random point from the circumference of the first circle and check 
-    # it is in the target UTLA.
-    rand_no = randrange(len(all_poly.exterior.coords))
-    
-    rand_point = Point(list(all_poly.exterior.coords)[rand_no][0],
-                       list(all_poly.exterior.coords)[rand_no][1])
-    
-    #		a. If it is not, choose another random point from the circ. of the first 
-    #   circle and check it is in the target UTLA. Proceed to step 4 when a point 
-    #   on the circ. of the first circle that is in the target UTLA has been 
-    #   identified.
-    while rand_point.within(derbs_poly) == False:
-        print("Find a new random point that is in Derbyshire")
+    while utla_perc_tot < 98:
+        #	3. Take a random point from the circumference of the first circle and check 
+        # it is in the target UTLA.
         rand_no = randrange(len(all_poly.exterior.coords))
+        
         rand_point = Point(list(all_poly.exterior.coords)[rand_no][0],
                            list(all_poly.exterior.coords)[rand_no][1])
+        
+        #		a. If it is not, choose another random point from the circ. of the first 
+        #   circle and check it is in the target UTLA. Proceed to step 4 when a point 
+        #   on the circ. of the first circle that is in the target UTLA has been 
+        #   identified.
+        while rand_point.within(utla_poly) == False:
+            print("Find a new random point that is in",utla_name)
+            rand_no = randrange(len(all_poly.exterior.coords))
+            rand_point = Point(list(all_poly.exterior.coords)[rand_no][0],
+                               list(all_poly.exterior.coords)[rand_no][1])
+        
+        #	4. Repeat step 2, using the point identified in step 3. Circle_perc should 
+        # be updated to be the area covered by any of the circles.
+        circle_utla_area_tot = all_poly.intersection(utla_poly).area
+        circle_perc_tot_work = circle_utla_area_tot/all_poly.area*100
+        utla_perc_tot_work = circle_utla_area_tot/utla_poly.area*100
+        radius = 0
+        while circle_perc_tot_work >= 95:
+            radius = radius + 1
+            circle_utla_area, circle_poly = draw_circle(rand_point,radius)
+            utla_perc_tot_work = ((circle_utla_area_tot + circle_utla_area - 
+                               all_poly.intersection(circle_poly)
+                               .intersection(utla_poly).area)/
+                utla_poly.area*100)
+            circle_perc_tot_work = ((circle_utla_area_tot + circle_utla_area - 
+                                all_poly.intersection(circle_poly)
+                               .intersection(utla_poly).area)/
+                (all_poly.area + circle_poly.area - 
+                 all_poly.intersection(circle_poly).area)*100)
+            print(radius)
+            print(utla_perc_tot_work)
+            print(circle_perc_tot_work)
+        
+        if radius > 1:
+            dict_utla = {'utla': utla_name, 'lat': rand_point.y, 
+                         'long': rand_point.x, 'radius': radius-1}
+            df_utla = df_utla.append(dict_utla, ignore_index = True)    
+            circle_poly = draw_circle(rand_point,radius - 1)[1]      
+            all_poly = cascaded_union([all_poly,circle_poly])
+            utla_perc_tot = all_poly.intersection(utla_poly).area/utla_poly.area*100
     
-    #	4. Repeat step 2, using the point identified in step 3. Circle_perc should 
-    # be updated to be the area covered by any of the circles.
-    circle_derbs_area_tot = all_poly.intersection(derbs_poly).area
-    circle_perc_tot_work = circle_derbs_area_tot/all_poly.area*100
-    derbs_perc_tot_work = circle_derbs_area_tot/derbs_poly.area*100
-    radius = 0
-    while circle_perc_tot_work >= 95:
-        radius = radius + 1
-        circle_derbs_area, circle_poly = draw_circle(rand_point,radius)
-        derbs_perc_tot_work = ((circle_derbs_area_tot + circle_derbs_area - 
-                           all_poly.intersection(circle_poly)
-                           .intersection(derbs_poly).area)/
-            derbs_poly.area*100)
-        circle_perc_tot_work = ((circle_derbs_area_tot + circle_derbs_area - 
-                            all_poly.intersection(circle_poly)
-                           .intersection(derbs_poly).area)/
-            (all_poly.area + circle_poly.area - 
-             all_poly.intersection(circle_poly).area)*100)
-        print(radius)
-        print(derbs_perc_tot_work)
-        print(circle_perc_tot_work)
+    all_geoj = folium.GeoJson(data=all_poly,
+                              style_function=lambda x: {'fillColor': 'blue'})
     
-    if radius > 1:
-        dict_derbs = {'lat': rand_point.y, 'long': rand_point.x, 'radius': radius-1}
-        df_derbs = df_derbs.append(dict_derbs, ignore_index = True)    
-        circle_poly = draw_circle(rand_point,radius - 1)[1]      
-        all_poly = cascaded_union([all_poly,circle_poly])
-        derbs_perc_tot = all_poly.intersection(derbs_poly).area/derbs_poly.area*100
+    c = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LAT,
+                   utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LONG],
+                   tiles = 'CartoDB positron')
+    all_geoj.add_to(c)
+    c.save("{0}_circles.html".format(utla_name))
 
-all_geoj = folium.GeoJson(data=all_poly,
-                          style_function=lambda x: {'fillColor': 'blue'})
+#%% Try to sort out hole in Derbyshire
 
-c = folium.Map(location=[utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LAT,
-               utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG],
-               tiles = 'CartoDB positron')
-all_geoj.add_to(c)
-c.save("mymap.html")
+# BFC - single bracket around second polygon (gap for Derby) where in Hartlepool there is a double bracket around second polygon (albeit this isn't a gap)
+utla_polygons = gpd.read_file('https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson')
 
+derbs = utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire']#.geometry
+
+derbs_ext = derbs.explode().geometry.exterior
+
+def coord_lister(geom):
+    coords = np.array(geom.coords)
+    return (coords)
+
+derbs_ext_coords = (derbs_ext.apply(coord_lister).iloc[0])
+
+derbs_ext_poly = Polygon([(d[0],d[1]) for d in derbs_ext_coords])
+# Works for exterior, not interior
+
+
+derbs_int = derbs.explode().geometry.interiors
+derbs_int_coords = []
+for interior in derbs_int:
+    print(list(interior))
+    derbs_int_coords += interior.coords[:]
+    
+[a.coords for a in derbs.explode().geometry.interiors]
+
+derbs_int_coords = np.array(derbs_int)
+
+derbs_poly = Polygon([(d[0],d[1]) for d in derbs_int])
+
+
+
+derbs_explode = derbs.explode().apply(coord_lister).iloc[0]
+derbs_explode_poly = Polygon([(d[0],d[1]) for d in derbs_explode])
+
+print([p for p in list(derbs)])
+
+
+# From https://stackoverflow.com/questions/21824157/how-to-extract-interior-polygon-coordinates-using-shapely
+
+def extract_poly_coords(geom):
+    print('-1')
+    if geom.type.values[0] == 'Polygon':
+        print('0')
+        exterior_coords = geom.exterior.coords[:]
+        interior_coords = []
+        for interior in geom.interiors:
+            interior_coords += interior.coords[:]
+    elif geom.type.values[0] == 'MultiPolygon':
+        print('1')
+        exterior_coords = []
+        interior_coords = []
+        print('2')
+        for part in geom:
+            print('3')
+            epc = extract_poly_coords(part)  # Recursive call
+            print('4')
+            exterior_coords += epc['exterior_coords']
+            print('5')
+            interior_coords += epc['interior_coords']
+    else:
+        raise ValueError('Unhandled geometry type: ' + repr(geom.type))
+    print('6')
+    return {'exterior_coords': exterior_coords,
+            'interior_coords': interior_coords}
+    
+extract_poly_coords(derbs.geometry)
+
+for part in derbs_explode.geometry:
+    print('1')
+    
+    
+# Reproducible example for StackOverflow
+import geopandas as gpd
+
+utla_polygons = gpd.read_file('https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson')
+
+derbs = utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire']
+derbs_int = derbs.explode().geometry.interiors
+print(derbs_int)
+
+derbs_int.coords
+
+# StackOverflow solution 1
+import geopandas as gpd
+import requests
+
+res = requests.get(
+    "https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson"
+)
+gdf = gpd.GeoDataFrame.from_features(res.json()).set_crs("epsg:4326")
+
+gdfd = gdf.loc[gdf["CTYUA21NM"].str.contains("Derbyshire")].copy()
+
+gdfd_coords = gdfd["geometry"].apply(
+        lambda g: [g3.coords for g2 in g.geoms for g3 in g2.interiors]
+        ).explode().explode()
+
+derbs_poly = Polygon(tuple([(e[0],e[1]) for e in derbs_ext_coords]),
+                     ((tuple([(i[0],i[1]) for i in gdfd_coords]),)))
+
+# StackOverflow solution 2
+from shapely.geometry import shape
+import requests
+
+url = 'https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson'
+r = requests.get(url)
+data = r.json()
+for f in data['features']:
+    print(f)
+    if f['properties']['CTYUA21NM'] == 'Derby':
+        geom = f['geometry']
+        if geom.get('type') == 'MultiPolygon':
+            print("BEFORE:")
+            for p in shape(geom).geoms:
+                print(len(p.interiors))
+            geom = [g[0] for g in geom['coordinates']]
+            geom = shape({
+                'type': 'MultiPolygon',
+                'coordinates': [geom]
+            })
+            # geom is a MultiPolygon instance with polygons only having an exterior ring
+            print("AFTER:")
+            for p in geom.geoms:
+                print(len(p.interiors))
+        break
+    
+# Identify whether there is an internal polygon
+data_json = res.json()
+geom = data_json['geometry']
+for p in shape(geom).geoms:
+    print(len(p.interiors))
+    
+    
+url = 'https://opendata.arcgis.com/datasets/244b257482da4778995cf11ff99e9997_0.geojson'
+r = requests.get(url)
+data = r.json()
+for f in data['features']:
+    if f['properties']['CTYUA21NM'] == 'Nottinghamshire':
+        geom = f['geometry']
+        if geom.get('type') == 'MultiPolygon':
+            print("BEFORE:")
+            for p in shape(geom).geoms:
+                print(len(p.interiors))
+                geom = [g[0] for g in geom['coordinates']]
+                geom = shape({
+                'type': 'MultiPolygon',
+                'coordinates': [geom]
+            })
+        # geom is a MultiPolygon instance with polygons only having an exterior ring
+        print("AFTER:")
+        for p in geom.geoms:
+            print(len(p.interiors))
+###   
