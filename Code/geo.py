@@ -240,11 +240,21 @@ mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
               'Nottinghamshire','Staffordshire','Warwickshire','Worcestershire'
               ]
 
+mids_utlas = ['Derbyshire','Nottingham','Derby']
+
+min_utla_perc_tot = 98
+max_circle_perc_tot = 95
+
 # Create empty dataframe, to contain centroids and radiuses of circles
-df_utla = pd.DataFrame(columns = ['utla','lat','long','radius'])
+df_utlas = pd.DataFrame(columns = ['utla','lat','long','radius'])
 
 for utla_name in mids_utlas:
     print(utla_name)
+    
+    radius_increment = 1
+    n_bad = 0
+    
+    df_utla = pd.DataFrame(columns = ['utla','lat','long','radius'])
     gdfd = utla_polygons.loc[utla_polygons["CTYUA21NM"]==utla_name].copy()         
     
     int_coords = gdfd["geometry"].apply(
@@ -319,26 +329,29 @@ for utla_name in mids_utlas:
         # centroid, that contains no more than X(start with 5)% of other UTLAs: 
         # start with 1km radius. If circle_perc >= 95, add 1km to radius until 
         # circle_perc < 95, then use circle with radius = radius - 1.
-        radius = 1
+        radius = radius_increment
         circle_poly = draw_circle(utla_cent,radius)[1]
         utla_perc = draw_circle(utla_cent,radius)[0]/utla_poly.area*100
         circle_perc = draw_circle(utla_cent,radius)[0]/circle_poly.area*100
         
-        while circle_perc >= 95:
-            radius = radius + 1
+        while circle_perc >= max_circle_perc_tot:
+            radius = radius + radius_increment
             circle_poly = draw_circle(utla_cent,radius)[1]
             utla_perc = draw_circle(utla_cent,radius)[0]/utla_poly.area*100
             circle_perc = draw_circle(utla_cent,radius)[0]/circle_poly.area*100
         
-        all_poly = draw_circle(utla_cent,radius-1)[1]
+        all_poly = draw_circle(utla_cent,radius-radius_increment)[1]
         
         dict_utla = {'utla': utla_name, 'lat': utla_cent.y, 
-                      'long': utla_cent.x, 'radius': radius-1}
+                      'long': utla_cent.x, 'radius': radius-radius_increment}
         df_utla = df_utla.append(dict_utla, ignore_index = True)
         
     utla_perc_tot = all_poly.intersection(utla_poly).area/utla_poly.area*100
     
-    while utla_perc_tot < 98:
+    while utla_perc_tot < min_utla_perc_tot:
+        if (n_bad > 0) & (round(n_bad/50) == n_bad/50):
+            radius_increment = radius_increment/2
+        
         #	3. Take a random point from the circumference of the first circle and check 
         # it is in the target UTLA.
         rand_no = randrange(len(all_poly.exterior.coords))
@@ -363,7 +376,7 @@ for utla_name in mids_utlas:
         utla_perc_tot_work = circle_utla_area_tot/utla_poly.area*100
         radius = 0
         while circle_perc_tot_work >= 95:
-            radius = radius + 1
+            radius = radius + radius_increment
             circle_utla_area, circle_poly = draw_circle(rand_point,radius)
             utla_perc_tot_work = ((circle_utla_area_tot + circle_utla_area - 
                                all_poly.intersection(circle_poly)
@@ -374,17 +387,30 @@ for utla_name in mids_utlas:
                                .intersection(utla_poly).area)/
                 (all_poly.area + circle_poly.area - 
                  all_poly.intersection(circle_poly).area)*100)
+            print('radius_increment:')
+            print(radius_increment)
+            print('Radius:')
             print(radius)
+            print('utla_perc:')
             print(utla_perc_tot_work)
+            print('circle_perc:')
             print(circle_perc_tot_work)
+            print('n_bad:')
+            print(n_bad)
         
-        if radius > 1:
+        if radius > radius_increment:
             dict_utla = {'utla': utla_name, 'lat': rand_point.y, 
-                         'long': rand_point.x, 'radius': radius-1}
+                         'long': rand_point.x, 'radius': radius-radius_increment}
             df_utla = df_utla.append(dict_utla, ignore_index = True)    
-            circle_poly = draw_circle(rand_point,radius - 1)[1]      
+            circle_poly = draw_circle(rand_point,radius - radius_increment)[1]      
             all_poly = cascaded_union([all_poly,circle_poly])
             utla_perc_tot = all_poly.intersection(utla_poly).area/utla_poly.area*100
+        else:
+            # Add one to unsuccessful coordinates
+            n_bad = n_bad + 1
+    
+    print('Saving')
+    df_utlas = df_utlas.append(df_utla)
     
     all_geoj = folium.GeoJson(data=all_poly,
                               style_function=lambda x: {'fillColor': 'blue'})
