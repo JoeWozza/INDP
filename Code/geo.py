@@ -40,6 +40,7 @@ import folium
 import geopy
 import geopy.distance
 from random import randrange
+import random
 import requests
 
 point = Point(utla_polygons[utla_polygons['CTYUA21NM']=='Derbyshire'].LONG,
@@ -163,7 +164,7 @@ if derbs_cent.within(derbs_poly):
 #m.save("mymap.html")
 #	3. Take a random point from the circumference of the first circle and check 
 # it is in the target UTLA.
-rand_no = randrange(361)    
+rand_no = randrange(361)
 
 rand_point = Point(list(circle_poly_1.exterior.coords)[rand_no][0],
                    list(circle_poly_1.exterior.coords)[rand_no][1])
@@ -230,7 +231,7 @@ res = requests.get(
 )
 utla_polygons = gpd.GeoDataFrame.from_features(res.json()).set_crs("epsg:4326")
 
-utla_name = "Derby"
+random.seed(123)
 
 mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
               'Herefordshire, County of','Telford and Wrekin','Stoke-on-Trent',
@@ -240,7 +241,7 @@ mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
               'Nottinghamshire','Staffordshire','Warwickshire','Worcestershire'
               ]
 
-mids_utlas = ['Derbyshire','Nottingham','Derby']
+#mids_utlas = ['Derbyshire','Nottingham','Derby']
 
 min_utla_perc_tot = 98
 max_circle_perc_tot = 95
@@ -405,6 +406,7 @@ for utla_name in mids_utlas:
             circle_poly = draw_circle(rand_point,radius - radius_increment)[1]      
             all_poly = cascaded_union([all_poly,circle_poly])
             utla_perc_tot = all_poly.intersection(utla_poly).area/utla_poly.area*100
+            n_bad = 0
         else:
             # Add one to unsuccessful coordinates
             n_bad = n_bad + 1
