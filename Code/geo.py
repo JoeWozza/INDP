@@ -36,9 +36,10 @@ mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
               'Wolverhampton','Derbyshire','Leicestershire','Lincolnshire',
               'Nottinghamshire','Staffordshire','Warwickshire','Worcestershire'
               ]
+#mids_utlas = ['Derbyshire','Derby']
 
 # Min area of target UTLA that must be covered by circle-based approximation
-min_utla_perc_tot = 98
+min_utla_perc_tot = 90
 # Min amount of circle-based approximation that must be in target UTLA
 min_circle_perc_tot = 95
 
@@ -246,9 +247,9 @@ for utla_name in mids_utlas:
                    utla_polygons[utla_polygons['CTYUA21NM']==utla_name].LONG],
                    tiles = 'CartoDB positron')
     all_geoj.add_to(c)
-    c.save("{0}_circles.html".format(utla_name))
+    c.save("{0}_circles_{1}.html".format(utla_name,min_utla_perc_tot))
 
 # Save df_utlas as csv (temporary solution while still putting together the
 # other code, so I don't have to run this every time I want to work on
 # subsequent code)
-df_utlas.to_csv("df_utlas.csv")
+df_utlas.to_csv("df_utlas_{0}.csv".format(min_utla_perc_tot))
