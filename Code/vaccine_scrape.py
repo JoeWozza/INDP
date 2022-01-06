@@ -28,9 +28,22 @@ df_utlas = pd.read_csv("df_utlas_90.csv")
 since = '2020-03-11'
 until = '2021-12-21'
 
-searchTerms = ['vaccines','vaccine','Johnson and Johnson','vaccinated',
-               'vaccination','booster','pfizer','J&J','vaccinations',
-               'unvaccinated']
+# Initial search terms
+#searchTerms = ['vaccines','vaccine','Johnson and Johnson','vaccinated',
+#               'vaccination','booster','pfizer','J&J','vaccinations',
+#               'unvaccinated']
+
+# Removed 'Johnson and Johnson' and 'J&J', added
+# 'astrazenica', 'antivaxxers', 'vaccinate', 'vax'
+# and 'vaxxed'.
+searchTerms = ['vaccines','vaccine','vaccinated',
+               'vaccination','booster','pfizer',
+               'vaccinations','unvaccinated',
+               'astrazenica','antivaxxers',
+               'vaccinate','vax','vaxxed']
+# Just the new five to add to the initial ones. Temp solution.
+searchTerms = ['astrazenica','antivaxxers',
+               'vaccinate','vax','vaxxed']
 
 # Read in df_utlas from csv (for now, will do this all within Python eventually)
 #df_utlas = pd.read_csv("df_utlas.csv")
@@ -40,6 +53,8 @@ searchTerms = ['vaccines','vaccine','Johnson and Johnson','vaccinated',
 # Create empty dataframes
 df_tweets = pd.DataFrame()
 df_error = pd.DataFrame()
+
+df = pd.DataFrame(sntwitter.TwitterSearchScraper('astrazenica geocode:"52.914639,-1.47189,4.0km" since:2021-12-01 until:2021-12-05').get_items())
 
 start = datetime.now()
 # Loop through UTLAs
@@ -75,7 +90,7 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
                         if x == 39:
                             dict_error = {'term': term, 'lat': lat, 'long': long, 
                                           'radius': radius, 'since': since, 'until': until}
-                            df_error = df_error.append(dict_error)
+                            df_error = df_error.append(dict_error, ignore_index=True)
                         print('error')
                     else:
                         df['utla'] = utla
@@ -91,8 +106,9 @@ df_tweets_deduped = df_tweets.drop_duplicates(subset=['url','utla'])
 pd.value_counts(df_tweets_deduped.utla)
 end = datetime.now()
 
-df_tweets.to_csv('df_tweets_90.csv')
-
+#df_tweets.to_csv('df_tweets_90.csv')
+df_tweets.to_csv('df_tweets_90_other5terms.csv')
+#here
 pd.value_counts(df_tweets.utla)
 pd.value_counts(df_tweets.term)
 pd.value_counts(df_tweets_deduped.utla)
