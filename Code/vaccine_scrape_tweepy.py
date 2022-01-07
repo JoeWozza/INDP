@@ -32,9 +32,6 @@ searchTerms = ['vaccines','vaccine','vaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
 
-#
-
-
 # Initiate dataframe to collect tweets
 df_tweets = pd.DataFrame(columns = ['utla','utla_circle','search_term','tweet_id','tweet_url','tweet_text',
                                     'tweet_datetime','tweet_place','tweet_coords',
@@ -69,7 +66,7 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
         # If there are no tweets in the circle, skip it, otherwise search for
         # tweets.
         if circ_tweets == 0:
-            print('Skip circle ' + str(c+1) ' in ' + utla)
+            print('Skip circle ' + str(c+1) + ' in ' + utla)
         else:   
             # Loop through search terms
             for term in searchTerms:
@@ -139,7 +136,7 @@ df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
 # UTLA frequencies
 print(pd.value_counts(df_tweets.utla))
 print(pd.value_counts(df_tweets_deduped.utla))
-print(pd.value_counts(df_tweets_deduped.date))
+print(pd.value_counts(df_tweets_deduped.tweet_date))
 
 # Output to csvs
 df_tweets.to_csv('df_tweets_tweepy.csv')
