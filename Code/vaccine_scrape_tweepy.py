@@ -18,7 +18,7 @@ consumer_secret = 'qE6FdosS3aiSHNDcamEhxcGCxl40k4oKoPNoVTrrW8IMWkYSkB'
 # See here for keeping them secure: https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-api = tweepy.API(auth)
+api = tweepy.API(auth, wait_on_rate_limit = True)
 
 #%% Data retrieval
 
@@ -31,6 +31,9 @@ searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
+
+#
+
 
 # Initiate dataframe to collect tweets
 df_tweets = pd.DataFrame(columns = ['utla','utla_circle','search_term','tweet_id','tweet_url','tweet_text',
@@ -66,7 +69,7 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
             term_start = datetime.now()
             # Collect tweets in df_tweets
             tweets = 0
-            for tweet in tweepy.Cursor(api.search_tweets, q='vaccine', 
+            for tweet in tweepy.Cursor(api.search_tweets, q=term, 
                                        geocode='{0},{1},{2}km'.format(lat,long,radius),
                                        #until='2022-01-07',
                                        tweet_mode='extended').items(999999999):
@@ -110,5 +113,6 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
             print(str(time_taken))
 
 end = datetime.now()
-print(str(start-end))
+print(str(end-start))
 # Twitter API only returns data for the previous 7 days
+
