@@ -57,62 +57,81 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
     for c,(lat,long,radius) in enumerate(zip(df_utla.lat, df_utla.long, 
           df_utla.radius)):
         
-        # Loop through search terms
-        for term in searchTerms:
-            #lat = 52.914639
-            #long = -1.47189
-            #radius = 4.0
-            #utla = 'Derby'
-            
-            print(utla + ': circle ' + str(c+1) + ' of ' + str(len(df_utla)) + ' - ' + term)
-            
-            term_start = datetime.now()
-            # Collect tweets in df_tweets
-            tweets = 0
-            for tweet in tweepy.Cursor(api.search_tweets, q=term, 
-                                       geocode='{0},{1},{2}km'.format(lat,long,radius),
-                                       #until='2022-01-07',
-                                       tweet_mode='extended').items(999999999):
-                #print(tweet)
-                #print(tweet.created_at)
-                #print(tweet.id)
-                #print(tweet.full_text)
-                #print(tweet.place)
-                #print(tweet.coordinates)
-                #print(tweet.user.name)
-                #print(tweet.user.location)
-                #print('')
-                dict_tweet = {'utla': utla, 'utla_circle': c+1, 'search_term': term,
-                              'tweet_url': 'twitter.com/'+tweet.user.screen_name+'/status/'
-                                  +tweet.id_str, #so I can find the tweet
-                              'tweet_id': tweet.id, #so I can find the tweet
-                              'tweet_text': tweet.full_text, #to analyse for sentiment
-                              'tweet_datetime': tweet.created_at, #time and data
-                              'tweet_place': tweet.place, #usually blank, but could be used if available
-                              'tweet_coords': tweet.coordinates, #usually blank, but could be used if available
-                              'tweet_language': tweet.lang, #filter to use 'en' only
-                              'tweet_likes': tweet.favorite_count, #number of times liked - can be used to measure impact and possibly weight
-                              'tweet_retweets': tweet.retweet_count, #number times retweeted - can be used to measure impact and possibly weight
-                              'user_name': tweet.user.screen_name, #so I can find the user
-                              'user_location': tweet.user.location, #location of user
-                              'user_followers': tweet.user.followers_count, #number of followers - proxy for 'influence'
-                              'user_protected': tweet.user.protected, #whether user is protected, expected to be false for all
-                              'user_tweets': tweet.user.statuses_count, #number of tweets posted by user - proxy for 'activity'
-                              'user_likes': tweet.user.favourites_count, #number of tweets liked by user - proxy for 'activity'
-                              'user_bio': tweet.user.description} #user bio - could be searched for common pro-/anti-vaccination content
-                df_tweets = df_tweets.append(dict_tweet, ignore_index=True)
-                tweets += 1
-            
-            #Record timings
-            term_end = datetime.now()
-            time_taken = term_end - term_start
-            dict_timings = {'utla': utla, 'utla_circle': c+1, 
-                            'search_term': term, 'no_tweets': tweets,
-                            'time_taken': str(time_taken)}
-            df_timings = df_timings.append(dict_timings, ignore_index=True)
-            print(str(time_taken))
+        # Are there any tweets from the circle? Test using search term 
+        # 'twitter'.
+        circ_tweets = 0
+        for tweet in tweepy.Cursor(api.search_tweets, q = 'twitter', 
+                                   geocode='{0},{1},{2}km'.format(lat,long,
+                                            radius)
+                                   ).items(5):
+            circ_tweets += 1
+        
+        # If there are no tweets in the circle, skip it, otherwise search for
+        # tweets.
+        if circ_tweets == 0:
+            print('Skip circle ' + str(c+1) ' in ' + utla)
+        else:   
+            # Loop through search terms
+            for term in searchTerms:
+                #lat = 52.914639
+                #long = -1.47189
+                #radius = 4.0
+                #utla = 'Derby'
+                
+                print(utla + ': circle ' + str(c+1) + ' of ' + str(len(df_utla)) + ' - ' + term)
+                
+                term_start = datetime.now()
+                # Collect tweets in df_tweets
+                tweets = 0
+                for tweet in tweepy.Cursor(api.search_tweets, q=term, 
+                                           geocode='{0},{1},{2}km'.format(lat,long,radius),
+                                           #until='2022-01-07',
+                                           tweet_mode='extended').items(999999999):
+                    #print(tweet)
+                    #print(tweet.created_at)
+                    #print(tweet.id)
+                    #print(tweet.full_text)
+                    #print(tweet.place)
+                    #print(tweet.coordinates)
+                    #print(tweet.user.name)
+                    #print(tweet.user.location)
+                    #print('')
+                    dict_tweet = {'utla': utla, 'utla_circle': c+1, 'search_term': term,
+                                  'tweet_url': 'twitter.com/'+tweet.user.screen_name+'/status/'
+                                      +tweet.id_str, #so I can find the tweet
+                                  'tweet_id': tweet.id, #so I can find the tweet
+                                  'tweet_text': tweet.full_text, #to analyse for sentiment
+                                  'tweet_datetime': tweet.created_at, #time and data
+                                  'tweet_place': tweet.place, #usually blank, but could be used if available
+                                  'tweet_coords': tweet.coordinates, #usually blank, but could be used if available
+                                  'tweet_language': tweet.lang, #filter to use 'en' only
+                                  'tweet_likes': tweet.favorite_count, #number of times liked - can be used to measure impact and possibly weight
+                                  'tweet_retweets': tweet.retweet_count, #number times retweeted - can be used to measure impact and possibly weight
+                                  'user_name': tweet.user.screen_name, #so I can find the user
+                                  'user_location': tweet.user.location, #location of user
+                                  'user_followers': tweet.user.followers_count, #number of followers - proxy for 'influence'
+                                  'user_protected': tweet.user.protected, #whether user is protected, expected to be false for all
+                                  'user_tweets': tweet.user.statuses_count, #number of tweets posted by user - proxy for 'activity'
+                                  'user_likes': tweet.user.favourites_count, #number of tweets liked by user - proxy for 'activity'
+                                  'user_bio': tweet.user.description} #user bio - could be searched for common pro-/anti-vaccination content
+                    df_tweets = df_tweets.append(dict_tweet, ignore_index=True)
+                    tweets += 1
+                
+                #Record timings
+                term_end = datetime.now()
+                time_taken = term_end - term_start
+                dict_timings = {'utla': utla, 'utla_circle': c+1, 
+                                'search_term': term, 'no_tweets': tweets,
+                                'time_taken': str(time_taken)}
+                df_timings = df_timings.append(dict_timings, ignore_index=True)
+                print(str(time_taken))
 
 end = datetime.now()
 print(str(end-start))
 # Twitter API only returns data for the previous 7 days
 
+pd.value_counts(df_tweets.utla)
+df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
+pd.value_counts(df_tweets_deduped.utla)
+
+df_tweets_ = df_tweets.copy()
