@@ -24,7 +24,7 @@ api = tweepy.API(auth, wait_on_rate_limit = True)
 
 # Read in df_utlas from csv (for now, will do this all within Python eventually)
 df_utlas = pd.read_csv("df_utlas_90.csv")
-df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby','Nottingham','Nottinghamshire'])]
+#df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby','Nottingham','Nottinghamshire'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
@@ -101,7 +101,7 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
                                       +tweet.id_str, #so I can find the tweet
                                   'tweet_id': tweet.id, #so I can find the tweet
                                   'tweet_text': tweet.full_text, #to analyse for sentiment
-                                  'tweet_datetime': tweet.created_at, #time and data
+                                  'tweet_datetime': tweet.created_at, #time and date
                                   'tweet_place': tweet.place, #usually blank, but could be used if available
                                   'tweet_coords': tweet.coordinates, #usually blank, but could be used if available
                                   'tweet_language': tweet.lang, #filter to use 'en' only
@@ -125,13 +125,22 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
                                 'time_taken': str(time_taken)}
                 df_timings = df_timings.append(dict_timings, ignore_index=True)
                 print(str(time_taken))
+    
+    # Create date field from datetime
+    df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
 
 end = datetime.now()
-print(str(end-start))
+print('Overall: ' + str(end-start))
 # Twitter API only returns data for the previous 7 days
 
-pd.value_counts(df_tweets.utla)
+# Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
-pd.value_counts(df_tweets_deduped.utla)
 
-df_tweets_ = df_tweets.copy()
+# UTLA frequencies
+print(pd.value_counts(df_tweets.utla))
+print(pd.value_counts(df_tweets_deduped.utla))
+print(pd.value_counts(df_tweets_deduped.date))
+
+# Output to csvs
+df_tweets.to_csv('df_tweets_tweepy.csv')
+df_tweets_deduped.to_csv('df_tweets_deduped_tweepy.csv')
