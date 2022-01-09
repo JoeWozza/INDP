@@ -10,6 +10,8 @@ import pandas as pd
 import tweepy
 from datetime import datetime
 
+filepath = "C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\"
+
 #%% Twitter API access stuff
 
 # Keys from here: https://developer.twitter.com/en/portal/projects/1475494865567899649/apps/new
@@ -20,29 +22,97 @@ consumer_secret = 'qE6FdosS3aiSHNDcamEhxcGCxl40k4oKoPNoVTrrW8IMWkYSkB'
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth, wait_on_rate_limit = True)
 
+#%% Define functions
+def tweepy_scrape(df,df_timings,term,lat,long,radius,utla,utla_circle):
+    # Uses tweepy's api.search_tweets function to scrape tweets and add them to
+    # an existing dataframe, df. The function outputs df and a separate
+    # dataframe, df_timings, that captures information on the volumes of tweets 
+    # downloaded and time taken.
+    # df: name of dataframe to contain tweets
+    # df_timings: name of dataframe to contain timings
+    # term: search term to be used to find tweets
+    # lat: latitude of circle centroid to be used to find tweets
+    # long: longitude of circle centroid to be used to find tweets
+    # radius: radius of circle centroid to be used to find tweets
+    # radius: radius of circle centroid to be used to find tweets
+    # utla: name of UTLA
+    # utla_circle: name/number of UTLA circle
+    
+    print(utla + ': circle ' + utla_circle + ' - ' + term)
+    
+    term_start = datetime.now()
+    # Collect tweets in df_tweets
+    tweets = 0
+    for tweet in tweepy.Cursor(api.search_tweets, q=term, 
+                               geocode='{0},{1},{2}km'.format(lat,long,radius),
+                               tweet_mode='extended').items(999999999):
+        dict_tweet = {'utla': utla, 'utla_circle': utla_circle, 
+                      'search_term': term,
+                      'tweet_url': 'twitter.com/'+tweet.user.screen_name+
+                          '/status/'+tweet.id_str,
+                      'tweet_id': tweet.id,
+                      'tweet_text': tweet.full_text,
+                      'tweet_datetime': tweet.created_at,
+                      'tweet_place': tweet.place,
+                      'tweet_coords': tweet.coordinates,
+                      'tweet_language': tweet.lang,
+                      'tweet_likes': tweet.favorite_count,
+                      'tweet_retweets': tweet.retweet_count,
+                      'user_name': tweet.user.screen_name,
+                      'user_location': tweet.user.location,
+                      'user_followers': tweet.user.followers_count,
+                      'user_protected': tweet.user.protected,
+                      'user_tweets': tweet.user.statuses_count,
+                      'user_likes': tweet.user.favourites_count,
+                      'user_bio': tweet.user.description}
+        df = df.append(dict_tweet, ignore_index=True)
+        tweets += 1
+    
+    #Record timings
+    term_end = datetime.now()
+    time_taken = term_end - term_start
+    dict_timings = {'utla': utla, 'utla_circle': utla_circle, 
+                    'search_term': term, 'no_tweets': tweets,
+                    'time_taken': str(time_taken)}
+    df_timings = df_timings.append(dict_timings, ignore_index=True)
+    print(str(time_taken))
+    
+    return df, df_timings
+
 #%% Data retrieval
 
 # Read in df_utlas from csv (for now, will do this all within Python eventually)
-df_utlas = pd.read_csv("df_utlas_90.csv")
-#df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby','Nottingham','Nottinghamshire'])]
+df_utlas = pd.read_csv("{0}df_utlas_90.csv".format(filepath))
+#df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
+#searchTerms = ['vaccines']
+
+df_tweets_cols = ['utla','utla_circle',
+                  'search_term','tweet_id',
+                  'tweet_url','tweet_text',
+                  'tweet_datetime','tweet_place',
+                  'tweet_coords','tweet_language',
+                  'tweet_likes','tweet_retweets',
+                  'user_name','user_location',
+                  'user_followers',
+                  'user_protected','user_tweets',
+                  'user_likes','user_bio']
+
+df_timings_cols = ['utla','utla_circle',
+                   'search_term','no_tweets',
+                   'time_taken']
 
 # Initiate dataframe to collect tweets
-df_tweets = pd.DataFrame(columns = ['utla','utla_circle','search_term','tweet_id','tweet_url','tweet_text',
-                                    'tweet_datetime','tweet_place','tweet_coords',
-                                    'tweet_language','tweet_likes',
-                                    'tweet_retweets','user_name',
-                                    'user_location','user_followers',
-                                    'user_protected','user_tweets','user_likes',
-                                    'user_bio'])
+df_tweets = pd.DataFrame(columns = df_tweets_cols)
 
 # Initiate dataframe to record timings
-df_timings = pd.DataFrame(columns = ['utla','utla_circle','search_term','no_tweets','time_taken'])
+df_timings = pd.DataFrame(columns = 
+                          df_timings_cols)
 
 start = datetime.now()
 # Loop through UTLAs
@@ -70,65 +140,38 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
         else:   
             # Loop through search terms
             for term in searchTerms:
-                #lat = 52.914639
-                #long = -1.47189
-                #radius = 4.0
-                #utla = 'Derby'
-                
-                print(utla + ': circle ' + str(c+1) + ' of ' + str(len(df_utla)) + ' - ' + term)
-                
-                term_start = datetime.now()
-                # Collect tweets in df_tweets
-                tweets = 0
-                for tweet in tweepy.Cursor(api.search_tweets, q=term, 
-                                           geocode='{0},{1},{2}km'.format(lat,long,radius),
-                                           #until='2022-01-07',
-                                           tweet_mode='extended').items(999999999):
-                    #print(tweet)
-                    #print(tweet.created_at)
-                    #print(tweet.id)
-                    #print(tweet.full_text)
-                    #print(tweet.place)
-                    #print(tweet.coordinates)
-                    #print(tweet.user.name)
-                    #print(tweet.user.location)
-                    #print('')
-                    dict_tweet = {'utla': utla, 'utla_circle': c+1, 'search_term': term,
-                                  'tweet_url': 'twitter.com/'+tweet.user.screen_name+'/status/'
-                                      +tweet.id_str, #so I can find the tweet
-                                  'tweet_id': tweet.id, #so I can find the tweet
-                                  'tweet_text': tweet.full_text, #to analyse for sentiment
-                                  'tweet_datetime': tweet.created_at, #time and date
-                                  'tweet_place': tweet.place, #usually blank, but could be used if available
-                                  'tweet_coords': tweet.coordinates, #usually blank, but could be used if available
-                                  'tweet_language': tweet.lang, #filter to use 'en' only
-                                  'tweet_likes': tweet.favorite_count, #number of times liked - can be used to measure impact and possibly weight
-                                  'tweet_retweets': tweet.retweet_count, #number times retweeted - can be used to measure impact and possibly weight
-                                  'user_name': tweet.user.screen_name, #so I can find the user
-                                  'user_location': tweet.user.location, #location of user
-                                  'user_followers': tweet.user.followers_count, #number of followers - proxy for 'influence'
-                                  'user_protected': tweet.user.protected, #whether user is protected, expected to be false for all
-                                  'user_tweets': tweet.user.statuses_count, #number of tweets posted by user - proxy for 'activity'
-                                  'user_likes': tweet.user.favourites_count, #number of tweets liked by user - proxy for 'activity'
-                                  'user_bio': tweet.user.description} #user bio - could be searched for common pro-/anti-vaccination content
-                    df_tweets = df_tweets.append(dict_tweet, ignore_index=True)
-                    tweets += 1
-                
-                #Record timings
-                term_end = datetime.now()
-                time_taken = term_end - term_start
-                dict_timings = {'utla': utla, 'utla_circle': c+1, 
-                                'search_term': term, 'no_tweets': tweets,
-                                'time_taken': str(time_taken)}
-                df_timings = df_timings.append(dict_timings, ignore_index=True)
-                print(str(time_taken))
-    
+                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,term,lat,long,radius,utla,str(c+1))
+
     # Create date field from datetime
     df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
 
+# Whole Midlands
+# Initiate dataframe to collect tweets
+df_mids_tweets = pd.DataFrame(columns = df_tweets_cols)
+
+# Initiate dataframe to record timings
+df_mids_timings = pd.DataFrame(columns = df_timings_cols)
+
+for term in searchTerms:
+    lat = 52.8052096
+    long = -1.3846729
+    radius = 150
+    df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,df_mids_timings,term,lat,long,radius,'Midlands','Midlands')
+    
+    # Create date field from datetime
+    df_mids_tweets['tweet_date'] = df_mids_tweets.tweet_datetime.dt.date
+
 end = datetime.now()
 print('Overall: ' + str(end-start))
-# Twitter API only returns data for the previous 7 days
+
+# Distribute Midlands circle tweets according to tweet_place/tweet_coordinates (if present) or user_location
+# Only done using user_location so far, tweet_place/tweet_coordinates will be a bit more complicated
+# Current method puts tweets from users with location e.g. 'Derbyshire' into Derby and Derbyshire due to 'contains'
+for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
+    print(utla)
+    df_mids_utla = df_mids_tweets[df_mids_tweets.user_location.str.contains(utla)]
+    df_mids_utla.utla = utla
+    df_tweets = df_tweets.append(df_mids_utla)
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
@@ -139,5 +182,6 @@ print(pd.value_counts(df_tweets_deduped.utla))
 print(pd.value_counts(df_tweets_deduped.tweet_date))
 
 # Output to csvs
-df_tweets.to_csv('df_tweets_tweepy.csv')
-df_tweets_deduped.to_csv('df_tweets_deduped_tweepy.csv')
+df_tweets.to_csv('{0}df_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
+df_tweets_deduped.to_csv('{0}df_tweets_deduped_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
+df_mids_tweets.to_csv('{0}df_mids_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
