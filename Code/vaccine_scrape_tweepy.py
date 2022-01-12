@@ -127,11 +127,10 @@ def circles_scrape(df_areas,area_col,df_tweets,df_timings):
     return df_tweets, df_timings
 
 def manual_assign_areas(df_in,df_tweets):
-    df_temp = df_in[df_in.user_location.str.contains(area)]
+    df_temp = df_in[df_in.user_location.str.contains(area)].copy()
     df_temp.area = area
-    df_tweets = df_tweets.append(df_temp)
     
-    return df_tweets
+    return df_temp
     
 
 #%% Data retrieval
@@ -184,7 +183,7 @@ print('Overall: ' + str(end-start))
 # Derby and Derbyshire due to 'contains'
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(area)
-    manual_assign_areas(df_mids_tweets,df_tweets)  
+    df_tweets = df_tweets.append(manual_assign_areas(df_mids_tweets,df_tweets))
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
