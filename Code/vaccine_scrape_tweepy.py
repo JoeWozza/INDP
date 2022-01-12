@@ -96,18 +96,44 @@ def check_circle(check_term,lat,long,radius):
             circ_tweets = False
     return circ_tweets
 
+def circles_scrape(df_areas,area_col,df_tweets,df_timings):
+    # Loop through circles
+    df_area = df_areas[df_areas[area_col] == area]#.head(5)
+    
+    for c,(lat,long,radius) in enumerate(zip(df_area.lat, df_area.long, 
+          df_area.radius)):
+        
+        # Are there any tweets from the circle? Test using search term 
+        # 'twitter'.
+        circ_tweets = check_circle('twitter',lat,long,radius)
+        
+        # If there are no tweets in the circle, skip it, otherwise search for
+        # tweets.
+        if circ_tweets == False:
+            print('Skip circle ' + str(c+1) + ' in ' + area)
+        else:
+            # Loop through search terms
+            for term in searchTerms:
+                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,term,lat,long,radius,area,str(c+1))
+
+    # Create date field from datetime
+    df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
+    
+    return df_tweets, df_timings
+    
+
 #%% Data retrieval
 
-# Read in df_utlas from csv (for now, will do this all within Python eventually)
+# Read in df_areas from csv (for now, will do this all within Python eventually)
 df_utlas = pd.read_csv("{0}df_utlas_90.csv".format(filepath))
-#df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby'])]
+df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-#searchTerms = ['vaccines']
+searchTerms = ['vaccines']
 
 df_tweets_cols = ['utla','utla_circle',
                   'search_term','tweet_id',
@@ -133,29 +159,9 @@ df_timings = pd.DataFrame(columns =
 
 start = datetime.now()
 # Loop through UTLAs
-for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
+for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     
-    # Loop through circles
-    df_utla = df_utlas[df_utlas.utla == utla]#.head(5)
-    
-    for c,(lat,long,radius) in enumerate(zip(df_utla.lat, df_utla.long, 
-          df_utla.radius)):
-        
-        # Are there any tweets from the circle? Test using search term 
-        # 'twitter'.
-        circ_tweets = check_circle('twitter',lat,long,radius)
-        
-        # If there are no tweets in the circle, skip it, otherwise search for
-        # tweets.
-        if circ_tweets == False:
-            print('Skip circle ' + str(c+1) + ' in ' + utla)
-        else:
-            # Loop through search terms
-            for term in searchTerms:
-                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,term,lat,long,radius,utla,str(c+1))
-
-    # Create date field from datetime
-    df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
+    df_tweets, df_timings = circles_scrape(df_utlas,'utla',df_tweets,df_timings)
 
 # Whole Midlands
 # Initiate dataframe to collect tweets
@@ -167,7 +173,7 @@ df_mids_timings = pd.DataFrame(columns = df_timings_cols)
 for term in searchTerms:
     lat = 52.8052096
     long = -1.3846729
-    radius = 150
+    radius = 15#0
     df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,df_mids_timings,term,lat,long,radius,'Midlands','Midlands')
     
     # Create date field from datetime
@@ -182,15 +188,15 @@ print('Overall: ' + str(end-start))
 for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(utla)
     df_mids_utla = df_mids_tweets[df_mids_tweets.user_location.str.contains(utla)]
-    df_mids_utla.utla = utla
+    df_mids_utla.area = utla
     df_tweets = df_tweets.append(df_mids_utla)
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
 
 # UTLA frequencies
-print(pd.value_counts(df_tweets.utla))
-print(pd.value_counts(df_tweets_deduped.utla))
+print(pd.value_counts(df_tweets.area))
+print(pd.value_counts(df_tweets_deduped.area))
 print(pd.value_counts(df_tweets_deduped.tweet_date))
 
 # Output to csvs
