@@ -24,7 +24,8 @@ auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth, wait_on_rate_limit = True)
 
 #%% Define functions
-def tweepy_scrape(df,df_timings,term,lat,long,radius,utla,utla_circle):
+
+def tweepy_scrape(df,df_timings,term,lat,long,radius,area,area_circle):
     # Uses tweepy's api.search_tweets function to scrape tweets and add them to
     # an existing dataframe, df. The function outputs df and a separate
     # dataframe, df_timings, that captures information on the volumes of tweets 
@@ -36,10 +37,10 @@ def tweepy_scrape(df,df_timings,term,lat,long,radius,utla,utla_circle):
     # long: longitude of circle centroid to be used to find tweets
     # radius: radius of circle centroid to be used to find tweets
     # radius: radius of circle centroid to be used to find tweets
-    # utla: name of UTLA
-    # utla_circle: name/number of UTLA circle
+    # area: name of geographical area
+    # area_circle: name/number of geographical area circle
     
-    print(utla + ': circle ' + utla_circle + ' - ' + term)
+    print(area + ': circle ' + area_circle + ' - ' + term)
     
     term_start = datetime.now()
     # Collect tweets in df_tweets
@@ -47,7 +48,7 @@ def tweepy_scrape(df,df_timings,term,lat,long,radius,utla,utla_circle):
     for tweet in tweepy.Cursor(api.search_tweets, q=term, 
                                geocode='{0},{1},{2}km'.format(lat,long,radius),
                                tweet_mode='extended').items(999999999):
-        dict_tweet = {'utla': utla, 'utla_circle': utla_circle, 
+        dict_tweet = {'area': area, 'area_circle': area_circle, 
                       'search_term': term,
                       'tweet_url': 'twitter.com/'+tweet.user.screen_name+
                           '/status/'+tweet.id_str,
@@ -72,13 +73,28 @@ def tweepy_scrape(df,df_timings,term,lat,long,radius,utla,utla_circle):
     #Record timings
     term_end = datetime.now()
     time_taken = term_end - term_start
-    dict_timings = {'utla': utla, 'utla_circle': utla_circle, 
+    dict_timings = {'area': area, 'area_circle': area_circle, 
                     'search_term': term, 'no_tweets': tweets,
                     'time_taken': str(time_taken)}
     df_timings = df_timings.append(dict_timings, ignore_index=True)
     print(str(time_taken))
     
     return df, df_timings
+
+def check_circle(check_term,lat,long,radius):
+    # Checks whether the geographical circle contains any tweets containing a
+    # user-defined search term.
+    circ_tweets = 0
+    for tweet in tweepy.Cursor(api.search_tweets, q = check_term, 
+                               geocode='{0},{1},{2}km'.format(lat,long,
+                                        radius)
+                               ).items(1):
+        circ_tweets += 1
+        if circ_tweets >= 1:
+            circ_tweets = True
+        else:
+            circ_tweets = False
+    return circ_tweets
 
 #%% Data retrieval
 
@@ -127,18 +143,13 @@ for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
         
         # Are there any tweets from the circle? Test using search term 
         # 'twitter'.
-        circ_tweets = 0
-        for tweet in tweepy.Cursor(api.search_tweets, q = 'twitter', 
-                                   geocode='{0},{1},{2}km'.format(lat,long,
-                                            radius)
-                                   ).items(5):
-            circ_tweets += 1
+        circ_tweets = check_circle('twitter',lat,long,radius)
         
         # If there are no tweets in the circle, skip it, otherwise search for
         # tweets.
-        if circ_tweets == 0:
+        if circ_tweets == False:
             print('Skip circle ' + str(c+1) + ' in ' + utla)
-        else:   
+        else:
             # Loop through search terms
             for term in searchTerms:
                 df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,term,lat,long,radius,utla,str(c+1))
