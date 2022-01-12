@@ -157,13 +157,12 @@ for area in df_utlas.drop_duplicates(subset=['utla']).utla:
 df_mids_tweets = pd.DataFrame()
 df_mids_timings = pd.DataFrame()
 
-# Define Midlands circle
-lat = 52.8052096
-long = -1.3846729
-radius = 150
-    
+# Download tweets    
 for term in searchTerms:
-    df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,df_mids_timings,term,lat,long,radius,'Midlands','Midlands')
+    df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,
+                                                    df_mids_timings,term,
+                                                    52.8052096,-1.3846729,150,
+                                                    'Midlands','Midlands')
     
     # Create date field from datetime
     df_mids_tweets['tweet_date'] = df_mids_tweets.tweet_datetime.dt.date
@@ -174,12 +173,12 @@ print('Overall: ' + str(end-start))
 # Distribute Midlands circle tweets according to tweet_place/tweet_coordinates (if present) or user_location
 # Only done using user_location so far, tweet_place/tweet_coordinates will be a bit more complicated
 # Current method puts tweets from users with location e.g. 'Derbyshire' into Derby and Derbyshire due to 'contains'
-for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
-    print(utla)
+for area in df_utlas.drop_duplicates(subset=['utla']).utla:
+    print(area)
     manual_assign_areas(df_mids_tweets,df_tweets)
 
 # Deduplicate by tweet_id and utla
-df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
+df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
 
 # UTLA frequencies
 print(pd.value_counts(df_tweets.area))
