@@ -120,6 +120,13 @@ def circles_scrape(df_areas,area_col,df_tweets,df_timings):
     df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
     
     return df_tweets, df_timings
+
+def manual_assign_areas(df_in,df_tweets):
+    df_temp = df_in[df_in.user_location.str.contains(area)]
+    df_temp.area = area
+    df_tweets = df_tweets.append(df_temp)
+    
+    return df_tweets
     
 
 #%% Data retrieval
@@ -135,27 +142,9 @@ searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccinate','vax','vaxxed']
 searchTerms = ['vaccines']
 
-df_tweets_cols = ['utla','utla_circle',
-                  'search_term','tweet_id',
-                  'tweet_url','tweet_text',
-                  'tweet_datetime','tweet_place',
-                  'tweet_coords','tweet_language',
-                  'tweet_likes','tweet_retweets',
-                  'user_name','user_location',
-                  'user_followers',
-                  'user_protected','user_tweets',
-                  'user_likes','user_bio']
-
-df_timings_cols = ['utla','utla_circle',
-                   'search_term','no_tweets',
-                   'time_taken']
-
-# Initiate dataframe to collect tweets
-df_tweets = pd.DataFrame(columns = df_tweets_cols)
-
-# Initiate dataframe to record timings
-df_timings = pd.DataFrame(columns = 
-                          df_timings_cols)
+# Initiate dataframes to collect tweets and record timings
+df_tweets = pd.DataFrame()
+df_timings = pd.DataFrame()
 
 start = datetime.now()
 # Loop through UTLAs
@@ -164,16 +153,16 @@ for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     df_tweets, df_timings = circles_scrape(df_utlas,'utla',df_tweets,df_timings)
 
 # Whole Midlands
-# Initiate dataframe to collect tweets
-df_mids_tweets = pd.DataFrame(columns = df_tweets_cols)
+# Initiate dataframe to collect tweets and record timings
+df_mids_tweets = pd.DataFrame()
+df_mids_timings = pd.DataFrame()
 
-# Initiate dataframe to record timings
-df_mids_timings = pd.DataFrame(columns = df_timings_cols)
-
+# Define Midlands circle
+lat = 52.8052096
+long = -1.3846729
+radius = 150
+    
 for term in searchTerms:
-    lat = 52.8052096
-    long = -1.3846729
-    radius = 15#0
     df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,df_mids_timings,term,lat,long,radius,'Midlands','Midlands')
     
     # Create date field from datetime
@@ -187,9 +176,7 @@ print('Overall: ' + str(end-start))
 # Current method puts tweets from users with location e.g. 'Derbyshire' into Derby and Derbyshire due to 'contains'
 for utla in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(utla)
-    df_mids_utla = df_mids_tweets[df_mids_tweets.user_location.str.contains(utla)]
-    df_mids_utla.area = utla
-    df_tweets = df_tweets.append(df_mids_utla)
+    manual_assign_areas(df_mids_tweets,df_tweets)
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','utla'])
