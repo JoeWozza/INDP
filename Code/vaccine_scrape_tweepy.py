@@ -10,6 +10,7 @@ import pandas as pd
 import tweepy
 from datetime import datetime
 
+# Set file path and create log file for task scheduler
 filepath = "C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\"
 
 #%% Twitter API access stuff
@@ -185,3 +186,4 @@ print(pd.value_counts(df_tweets_deduped.tweet_date))
 df_tweets.to_csv('{0}df_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
 df_tweets_deduped.to_csv('{0}df_tweets_deduped_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
 df_mids_tweets.to_csv('{0}df_mids_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
+df_mids_tweets.to_csv('{0}df_timings_{1}.csv'.format(filepath,str(datetime.now().date())))
