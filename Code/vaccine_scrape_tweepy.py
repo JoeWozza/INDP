@@ -15,10 +15,12 @@ filepath = "C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\SPFIN
 
 #%% Twitter API access stuff
 
-# Keys from here: https://developer.twitter.com/en/portal/projects/1475494865567899649/apps/new
+# Keys from here: https://developer.twitter.com/en/portal/projects/
+# 1475494865567899649/apps/new
 consumer_key = 'OPqZPaFbJHx8sXf8y7C5umylY'
 consumer_secret = 'qE6FdosS3aiSHNDcamEhxcGCxl40k4oKoPNoVTrrW8IMWkYSkB'
-# See here for keeping them secure: https://developer.twitter.com/en/docs/twitter-api/getting-started/getting-access-to-the-twitter-api
+# See here for keeping them secure: https://developer.twitter.com/en/docs
+# /twitter-api/getting-started/getting-access-to-the-twitter-api
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth, wait_on_rate_limit = True)
@@ -114,7 +116,9 @@ def circles_scrape(df_areas,area_col,df_tweets,df_timings):
         else:
             # Loop through search terms
             for term in searchTerms:
-                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,term,lat,long,radius,area,str(c+1))
+                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,
+                                                      term,lat,long,radius,
+                                                      area,str(c+1))
 
     # Create date field from datetime
     df_tweets['tweet_date'] = df_tweets.tweet_datetime.dt.date
@@ -131,7 +135,7 @@ def manual_assign_areas(df_in,df_tweets):
 
 #%% Data retrieval
 
-# Read in df_areas from csv (for now, will do this all within Python eventually)
+# Read in df_areas from csv (for now, may do this all within Python eventually)
 df_utlas = pd.read_csv("{0}df_utlas_90.csv".format(filepath))
 df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby'])]
 
@@ -150,7 +154,8 @@ start = datetime.now()
 # Loop through UTLAs
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     
-    df_tweets, df_timings = circles_scrape(df_utlas,'utla',df_tweets,df_timings)
+    df_tweets, df_timings = circles_scrape(df_utlas,'utla',df_tweets,
+                                           df_timings)
 
 # Whole Midlands
 # Initiate dataframe to collect tweets and record timings
@@ -170,9 +175,12 @@ for term in searchTerms:
 end = datetime.now()
 print('Overall: ' + str(end-start))
 
-# Distribute Midlands circle tweets according to tweet_place/tweet_coordinates (if present) or user_location
-# Only done using user_location so far, tweet_place/tweet_coordinates will be a bit more complicated
-# Current method puts tweets from users with location e.g. 'Derbyshire' into Derby and Derbyshire due to 'contains'
+# Distribute Midlands circle tweets according to tweet_place/tweet_coordinates 
+# (if present) or user_location
+# Only done using user_location so far, tweet_place/tweet_coordinates will be a
+# bit more complicated
+# Current method puts tweets from users with location e.g. 'Derbyshire' into 
+# Derby and Derbyshire due to 'contains'
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(area)
     manual_assign_areas(df_mids_tweets,df_tweets)
@@ -186,7 +194,11 @@ print(pd.value_counts(df_tweets_deduped.area))
 print(pd.value_counts(df_tweets_deduped.tweet_date))
 
 # Output to csvs
-df_tweets.to_csv('{0}df_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
-df_tweets_deduped.to_csv('{0}df_tweets_deduped_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
-df_mids_tweets.to_csv('{0}df_mids_tweets_tweepy_{1}.csv'.format(filepath,str(datetime.now().date())))
-df_mids_tweets.to_csv('{0}df_timings_{1}.csv'.format(filepath,str(datetime.now().date())))
+df_tweets.to_csv('{0}df_tweets_tweepy_{1}.csv'.format(filepath,
+                 str(datetime.now().date())))
+df_tweets_deduped.to_csv('{0}df_tweets_deduped_tweepy_{1}.csv'.format(filepath,
+                         str(datetime.now().date())))
+df_mids_tweets.to_csv('{0}df_mids_tweets_tweepy_{1}.csv'.format(filepath,
+                      str(datetime.now().date())))
+df_mids_tweets.to_csv('{0}df_timings_{1}.csv'.format(filepath,
+                      str(datetime.now().date())))
