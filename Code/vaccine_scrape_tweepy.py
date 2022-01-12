@@ -39,7 +39,6 @@ def tweepy_scrape(api,df,df_timings,term,lat,long,radius,area,area_circle):
     # lat: latitude of circle centroid to be used to find tweets
     # long: longitude of circle centroid to be used to find tweets
     # radius: radius of circle centroid to be used to find tweets
-    # radius: radius of circle centroid to be used to find tweets
     # area: name of geographical area
     # area_circle: name/number of geographical area circle
     
@@ -87,6 +86,10 @@ def tweepy_scrape(api,df,df_timings,term,lat,long,radius,area,area_circle):
 def check_circle(check_term,lat,long,radius):
     # Checks whether the geographical circle contains any tweets containing a
     # user-defined search term.
+    # check_term: search term used to check whether tweets exist
+    # lat: latitude of circle centroid to be used to find tweets
+    # long: longitude of circle centroid to be used to find tweets
+    # radius: radius of circle centroid to be used to find tweets
     circ_tweets = 0
     for tweet in tweepy.Cursor(api.search_tweets, q = check_term, 
                                geocode='{0},{1},{2}km'.format(lat,long,
@@ -99,12 +102,15 @@ def check_circle(check_term,lat,long,radius):
             circ_tweets = False
     return circ_tweets
 
-def circles_scrape(df_areas,area_col,df_tweets,df_timings):
-    # Loop through circles
-    df_area = df_areas[df_areas[area_col] == area]#.head(5)
+def circles_scrape(df_area,df_tweets,df_timings):
+    # Loops through defined circles that make up an area and downloads tweets
+    # df_area: dataframe containing circles to loop through
+    # df_tweets: existing dataframe to append tweets to
+    # df_timings: existing dataframe to append timings to
     
-    for c,(lat,long,radius) in enumerate(zip(df_area.lat, df_area.long, 
-          df_area.radius)):
+    # Loop through circles    
+    for c,(lat,long,radius) in enumerate(zip(df_utla.lat, df_utla.long, 
+          df_utla.radius)):
         
         # Are there any tweets from the circle? Test using search term 
         # 'twitter'.
@@ -126,12 +132,15 @@ def circles_scrape(df_areas,area_col,df_tweets,df_timings):
     
     return df_tweets, df_timings
 
-def manual_assign_areas(df_in,df_tweets):
+def manual_assign_areas(df_in,area):
+    # Assigns tweets to an area based on whether user_location contains the
+    # area name
+    # df_in: dataframe containing tweets
+    # area: name of area to assign tweets to
     df_temp = df_in[df_in.user_location.str.contains(area)].copy()
     df_temp.area = area
     
     return df_temp
-    
 
 #%% Data retrieval
 
@@ -154,8 +163,9 @@ start = datetime.now()
 # Loop through UTLAs
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     
-    df_tweets, df_timings = circles_scrape(df_utlas,'utla',df_tweets,
-                                           df_timings)
+    df_utla = df_utlas[df_utlas['utla'] == area]#.head(5)
+    
+    df_tweets, df_timings = circles_scrape(df_utla,df_tweets,df_timings)
 
 # Whole Midlands
 # Initiate dataframe to collect tweets and record timings
@@ -175,15 +185,10 @@ for term in searchTerms:
 end = datetime.now()
 print('Overall: ' + str(end-start))
 
-# Distribute Midlands circle tweets according to tweet_place/tweet_coordinates 
-# (if present) or user_location
-# Only done using user_location so far, tweet_place/tweet_coordinates will be a
-# bit more complicated
-# Current method puts tweets from users with location e.g. 'Derbyshire' into 
-# Derby and Derbyshire due to 'contains'
+# Distribute Midlands circle tweets to UTLAs using user_location
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(area)
-    df_tweets = df_tweets.append(manual_assign_areas(df_mids_tweets,df_tweets))
+    df_tweets = df_tweets.append(manual_assign_areas(df_mids_tweets,area))
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
