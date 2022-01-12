@@ -27,11 +27,12 @@ api = tweepy.API(auth, wait_on_rate_limit = True)
 
 #%% Define functions
 
-def tweepy_scrape(df,df_timings,term,lat,long,radius,area,area_circle):
+def tweepy_scrape(api,df,df_timings,term,lat,long,radius,area,area_circle):
     # Uses tweepy's api.search_tweets function to scrape tweets and add them to
     # an existing dataframe, df. The function outputs df and a separate
     # dataframe, df_timings, that captures information on the volumes of tweets 
     # downloaded and time taken.
+    # api: valid tweepy.api.API object
     # df: name of dataframe to contain tweets
     # df_timings: name of dataframe to contain timings
     # term: search term to be used to find tweets
@@ -116,7 +117,7 @@ def circles_scrape(df_areas,area_col,df_tweets,df_timings):
         else:
             # Loop through search terms
             for term in searchTerms:
-                df_tweets, df_timings = tweepy_scrape(df_tweets,df_timings,
+                df_tweets, df_timings = tweepy_scrape(api,df_tweets,df_timings,
                                                       term,lat,long,radius,
                                                       area,str(c+1))
 
@@ -137,7 +138,7 @@ def manual_assign_areas(df_in,df_tweets):
 
 # Read in df_areas from csv (for now, may do this all within Python eventually)
 df_utlas = pd.read_csv("{0}df_utlas_90.csv".format(filepath))
-df_utlas = df_utlas[df_utlas.utla.isin(['Derbyshire','Derby'])]
+df_utlas = df_utlas[df_utlas.utla.isin(['Leicestershire','Derby'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
@@ -164,7 +165,7 @@ df_mids_timings = pd.DataFrame()
 
 # Download tweets    
 for term in searchTerms:
-    df_mids_tweets, df_mids_timings = tweepy_scrape(df_mids_tweets,
+    df_mids_tweets, df_mids_timings = tweepy_scrape(api,df_mids_tweets,
                                                     df_mids_timings,term,
                                                     52.8052096,-1.3846729,150,
                                                     'Midlands','Midlands')
@@ -183,7 +184,7 @@ print('Overall: ' + str(end-start))
 # Derby and Derbyshire due to 'contains'
 for area in df_utlas.drop_duplicates(subset=['utla']).utla:
     print(area)
-    manual_assign_areas(df_mids_tweets,df_tweets)
+    manual_assign_areas(df_mids_tweets,df_tweets)  
 
 # Deduplicate by tweet_id and utla
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
