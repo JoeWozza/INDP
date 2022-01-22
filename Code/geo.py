@@ -7,6 +7,16 @@ Created on Mon Sep  6 19:30:55 2021
 
 # GEOCODING: approximating UTLAs of the Midlands using circles
 
+from os import chdir, getcwd
+
+# Set file path
+filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
+            "SPFINDP21T4\\")
+chdir(filepath)
+
+from INDP.Code import CircleApprox
+class_ca = CircleApprox.CircleApprox()
+
 import geopandas as gpd
 import numpy as np
 from shapely.geometry import Point, Polygon
@@ -122,6 +132,7 @@ def circle_intersection_area(circle_poly,area_poly):
     circle_area_area = circle_poly.intersection(area_poly).area
     
     return circle_area_area
+
 
 def coord_lister(geom):
     coords = np.array(geom.coords)
@@ -306,14 +317,14 @@ def areas_circles(areas,radius_increment,df_polygons,area_var,poly_var,
         map_poly(area_poly,lat,long,area)
         
         initial_poly, df_area, area_perc_tot, circle_perc_tot = initial_circle(
-                lat,long,area_poly,area,df_area,radius_increment)
+                lat,long,area_poly,area,df_area,radius_increment,min_circle_perc_tot)
         
         df_area, all_poly = fill_area_with_circles(area_perc_tot,
                                                    circle_perc_tot,
                                                    min_area_perc_tot,
                                                    radius_increment,n_bad,50,
                                                    initial_poly,area_poly,
-                                                   area,df_area)
+                                                   area,df_area,min_circle_perc_tot)
         
         # Append the circles for the target UTLA to those for all UTLAs
         df_areas = df_areas.append(df_area)
@@ -325,6 +336,10 @@ def areas_circles(areas,radius_increment,df_polygons,area_var,poly_var,
 
 #%%
 # Loop through Midlands UTLAs
-df_utlas = areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM","geometry",
+df_utlas = class_ca.areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM","geometry",
                          min_utla_perc_tot,min_circle_perc_tot)
 
+# Save df_utlas as csv (temporary solution while still putting together the
+# other code, so I don't have to run this every time I want to work on
+# subsequent code)
+df_utlas.to_csv("df_utlas_{0}.csv".format(min_utla_perc_tot))
