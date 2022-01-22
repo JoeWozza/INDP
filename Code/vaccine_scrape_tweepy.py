@@ -10,7 +10,7 @@ from os import chdir, getcwd
 
 # Set file path
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+            "SPFINDP21T4\\INDP\\Data\\")
 chdir(filepath)
 
 from INDP.Code import TweetScrape
