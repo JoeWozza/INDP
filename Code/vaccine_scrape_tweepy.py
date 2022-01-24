@@ -97,5 +97,29 @@ df_tweets_deduped.to_csv('{0}df_tweets_deduped_tweepy_{1}.csv'.format(filepath,
                          str(datetime.now().date())))
 df_mids_tweets.to_csv('{0}df_mids_tweets_tweepy_{1}.csv'.format(filepath,
                       str(datetime.now().date())))
-df_mids_tweets.to_csv('{0}df_timings_{1}.csv'.format(filepath,
-                      str(datetime.now().date())))
+
+#%%
+# Tweets from all of England
+df_eng = pd.read_csv("{0}df_eng_90.csv".format(filepath))
+
+# Initiate dataframes to collect tweets and record timings
+df_tweets_eng = pd.DataFrame()
+df_timings_eng = pd.DataFrame()
+
+start = datetime.now()
+
+df_tweets_eng, df_timings_eng = class_ts.circles_scrape(api,"England",df_eng,
+                                                        df_tweets_eng,
+                                                        df_timings_eng,
+                                                        searchTerms)
+
+end = datetime.now()
+print('Overall: ' + str(end-start))
+
+df_tweets_eng_deduped = df_tweets_eng.drop_duplicates(subset=['tweet_id'])
+
+# Output to csvs
+df_tweets_eng.to_csv('{0}df_tweets_eng_tweepy_{1}.csv'.format(filepath,
+                     str(datetime.now().date())))
+df_tweets_eng_deduped.to_csv('{0}df_tweets_eng_deduped_tweepy_{1}.csv'.format(
+        filepath, str(datetime.now().date())))
