@@ -65,3 +65,46 @@ df_utlas = class_ca.areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM","geomet
 # other code, so I don't have to run this every time I want to work on
 # subsequent code)
 df_utlas.to_csv("df_utlas_{0}.csv".format(min_utla_perc_tot))
+
+#%% Circle-based approximation of England
+
+# Use England polygon
+geojson_url = ("https://opendata.arcgis.com/datasets/"
+               "cf156624007344f2a4a067fe7711c0ee_0.geojson")
+res = requests.get(geojson_url)
+ctry_polygons = gpd.GeoDataFrame.from_features(res.json()).set_crs("epsg:4326")
+
+# Combine all UTLAs to get UK polygon
+df = ctry_polygons
+var = 'CTRY20NM'
+
+gdfd = ctry_polygons.loc[ctry_polygons['CTRY20NM']=='England'].copy()
+    
+eng_poly = class_ca.extract_area_poly(gdfd['geometry'],gdfd)
+
+# Approximate UK with circles
+lat = gdfd.LAT
+long = gdfd.LONG
+area = 'England'
+df_area = pd.DataFrame(columns = ['area','lat','long','radius'])
+radius_increment = 10
+min_area_perc_tot = 90
+n_bad = 0
+
+class_ca.map_poly(eng_poly,lat,long,area)
+
+initial_poly, df_area, area_perc_tot, circle_perc_tot = (class_ca.
+                                                         initial_circle(
+        lat,long,eng_poly,area,df_area,radius_increment,min_circle_perc_tot)
+                                                         )
+
+df_area, all_poly = class_ca.fill_area_with_circles(area_perc_tot,
+                                                    circle_perc_tot,
+                                                    min_area_perc_tot,
+                                                    radius_increment,n_bad,50,
+                                                    initial_poly,eng_poly,
+                                                    area,df_area,
+                                                    min_circle_perc_tot)
+
+class_ca.map_poly(all_poly,lat,long,area)
+df_area.to_csv("df_eng_{0}.csv".format(min_area_perc_tot))
