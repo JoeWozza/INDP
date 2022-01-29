@@ -6,15 +6,15 @@ Created on Fri Jan  7 12:01:14 2022
 """
 #%% Packages
 
+from INDP.Code import TweetScrape
+class_ts = TweetScrape.TweetScrape()
+
 from os import chdir, getcwd
 
 # Set file path
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\INDP\\Data\\")
 chdir(filepath)
-
-from INDP.Code import TweetScrape
-class_ts = TweetScrape.TweetScrape()
 
 import pandas as pd
 import tweepy
