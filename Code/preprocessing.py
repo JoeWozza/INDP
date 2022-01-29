@@ -38,19 +38,35 @@ nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 from nltk.tokenize import word_tokenize
 
+# Combine all Midlands tweets
 files = listdir()
 
-filestring = 'df_tweets_deduped_tweepy_'
+filestring_mids = 'df_tweets_deduped_tweepy_'
+filestring_mids = 'df_tweets_tweepy_'
     
-tweets_files = [s for s in files if filestring in s]
+tweets_files_mids = [s for s in files if filestring_mids in s]
 
-df_tweets = pd.DataFrame()
+df_tweets_mids = pd.DataFrame()
 
-for f in tweets_files:
+for f in tweets_files_mids:
     print(f)
-    df_tweets = df_tweets.append(pd.read_csv(f))
+    df_tweets_mids = df_tweets_mids.append(pd.read_csv(f))
 
-df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
+df_tweets_mids_deduped = df_tweets_mids.drop_duplicates(subset=['tweet_id','area','search_term'])
+
+#Combine all England tweets
+filestring_eng = 'df_tweets_eng_tweepy_'
+
+tweets_files_eng = [s for s in files if filestring_eng in s]
+
+df_tweets_eng = pd.DataFrame()
+
+for f in tweets_files_eng:
+    print(f)
+    df_tweets_eng = df_tweets_eng.append(pd.read_csv(f))
+
+df_tweets_deduped_eng = df_tweets_eng.drop_duplicates(subset=['tweet_id','area','search_term'])
+# 56,244 tweets, 67,511 when deduplicated by search_term as well.
 
 #df = pd.read_csv('df_tweets_example.csv')
 #df = pd.read_csv('df_tweets_deduped_term.csv')
@@ -137,6 +153,13 @@ def lemmatise(text):
     return lemma
 
 #df['content_lemma'] = df['content_tokenized'].apply(lemmatise)
+    
+# Stop words include words that change the meaning of a sentence (e.g. didn't)
+analyzer = SentimentIntensityAnalyzer()
+print(analyzer.polarity_scores("my vaccine didn't kill me"))
+print(analyzer.polarity_scores("vaccine kill"))
+print(analyzer.polarity_scores("vaccine didn't kill"))
+# So don't remove them
 
 def lemmatise_incstop(text):
     # POS tagger dictionary
@@ -398,6 +421,11 @@ analyzer.polarity_scores("how sad and")
 analyzer.polarity_scores("sad and discriminatory")
 analyzer.polarity_scores("and discriminatory is")
 analyzer.polarity_scores("discriminatory is this")
+
+analyzer.polarity_scores("big hate")
+analyzer.polarity_scores("love")
+analyzer.polarity_scores("hate")
+
 
 
 sen1 = analyzer.polarity_scores("Wow how sad and discriminatory is this")
