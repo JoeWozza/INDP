@@ -163,11 +163,12 @@ def sentconf(text):
         return conf
 
 # Process data
-df_in['content_lemma'] = df_in['tweet_text'].apply(clean).apply(tokenize).apply(lemmatise)
-df_out = df_in.copy()
-df_out['sentiment'] = df_in['content_lemma'].apply(VADERsentiment)
-df_out['sentconf'] = df_out['content_lemma'].apply(sentconf)
+df_VADER = df_tweets_deduped_eng.copy()
+df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
+df_VADER['content_lemma'] = df_tweets_deduped_eng['tweet_text'].apply(clean).apply(tokenize).apply(lemmatise)
+df_VADER['sentiment'] = df_VADER['content_lemma'].apply(VADERsentiment)
+df_VADER['sentconf'] = df_VADER['content_lemma'].apply(sentconf)
 
-# This takes a few seconds, whereas LRSentiA takes hours.
+# This takes a few minutes, whereas LRSentiA takes hours.
 
-df_out.to_csv("INDP//Data//df_VADER.csv")
+df_VADER.to_csv("INDP//Data//df_VADER.csv")
