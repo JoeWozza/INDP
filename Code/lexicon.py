@@ -41,6 +41,8 @@ class_lr = LRSentiA.LexicalAnalyzer()
 # Drop label - only in the input to make it work
 #df_in = df_in.head(20)
 data_LRSentiA, predictions_LRSentiA, pred_confidence_scores_LRSentiA, total_positive_score_LRSentiA, total_negative_score_LRSentiA, tweet_ids = class_lr.main(df_in)
+# some have 86444 records, predictions_LRSentiA, total_negative_score_LRSentiA,
+# total_positive_score_LRSentiA and tweet_ids only have 86443.
 
 #%% VADER
 
