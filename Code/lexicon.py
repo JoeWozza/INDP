@@ -118,7 +118,16 @@ def stem(text):
 #   becomes care) [88].
 
 # Stop words include words that change the meaning of a sentence (e.g. didn't),
-# so don't remove them.
+# so don't remove all of them.
+# Remove some words from stopwords, where they have an impact on the sentiment.
+# Use the word 'good' as a test case for whether a stop word changes the
+# sentiment.
+remove_list = []
+for word in stopwords.words('english'):
+    if analyzer.polarity_scores(word + " good")['compound'] != analyzer.polarity_scores("good")['compound']:
+        remove_list.append(word)
+
+stopwords_list = [ele for ele in stopwords.words('english') if ele not in remove_list]
 
 def lemmatise(text):
     # POS tagger dictionary
@@ -129,11 +138,12 @@ def lemmatise(text):
     lemma = ''
     pos = pos_tag(text)
     for ele, tag in pos:
-        tag = pos_dict.get(tag[0])
-        if not tag:
-            lemma = lemma + ' ' + ele
-        else:
-            lemma = lemma + ' ' + wordnet_lemmatizer.lemmatize(ele, tag)
+        if ele not in stopwords_list:
+            tag = pos_dict.get(tag[0])
+            if not tag:
+                lemma = lemma + ' ' + ele
+            else:
+                lemma = lemma + ' ' + wordnet_lemmatizer.lemmatize(ele, tag)
     return lemma
 
 # Return compound polarity scores
@@ -158,6 +168,8 @@ def sentconf(text):
             #print(analyzer.polarity_scores(pair))
             pos += analyzer.polarity_scores(pair)['pos']
             neg += analyzer.polarity_scores(pair)['neg']
+            #print(pos)
+            #print(neg)
         if (pos+neg)>0: #if there are no positive or negative words, conf should be zero
             conf = abs(pos-neg)/(pos+neg)
         else:
@@ -174,3 +186,36 @@ df_VADER['sentconf'] = df_VADER['content_lemma'].apply(sentconf)
 # This takes a few minutes, whereas LRSentiA takes hours.
 
 df_VADER.to_csv("INDP//Data//df_VADER.csv")
+
+# This example is a problem. Compound output is positive, for some reason, but
+# all pairs analysed by sentconf are either negative or neutral, so confidence
+# score = 1. Removing stop words helps, because it produces positive and
+# negative pairs, but this seems like a fluke.
+text = "This CAN NOT be ignore The government must acknowledge this issue and either prove it invalid or act to halt vaccine for male in this age group"
+analyzer.polarity_scores(text)
+
+sentconf(text)
+
+text_ = word_tokenize(text)
+text2 = ''
+for ele in text_:
+    if ele not in stopwords_list:
+        text2 = text2 + ' ' + ele
+
+analyzer.polarity_scores(text2)
+sentconf(text2)
+
+stopwords_list = stopwords.words('english')
+print(len(stopwords_list))
+stopwords_list.remove("wasn't")
+print(len(stopwords_list))
+
+# Remove some words from stopwords, where they have an impact on the sentiment
+remove_list = []
+for word in stopwords.words('english'):
+    if analyzer.polarity_scores(word + " good")['compound'] != analyzer.polarity_scores("good")['compound']:
+        remove_list.append(word)
+
+stopwords_list = [ele for ele in stopwords.words('english') if ele not in remove_list]
+print(len(stopwords_list))
+# PUT THIS (^) IN EARLIER ON TO REMOVE STOP WORDS DURING LEMMATISATION
