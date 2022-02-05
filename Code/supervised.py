@@ -44,13 +44,13 @@ df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
 def cat_sentiment(row):
     # Positive
     if row['sentiment'] >= 0.05:
-        return 1
+        return 2
     # Negative
     elif row['sentiment'] <= - 0.05:
         return 0
     # Neutral
     else:
-        return -1
+        return 1
 
 def cat_setconf(row):
     if row['sentconf'] >= thr:
@@ -113,6 +113,8 @@ df_VADER_test2 = df_VADER[(df_VADER['sentconf'] < thr - 0.5 * std) &
                          (df_VADER['sentconf'] > 0)].reset_index()
 
 #%%
+n_epochs = 50
+
 # Remove neutrals
 #df_VADER = df_VADER[df_VADER.sentiment_cat >= 0].reset_index()
 #df_VADER_train.to_csv("df_VADER_train.csv")
@@ -120,8 +122,10 @@ df_VADER_test2 = df_VADER[(df_VADER['sentconf'] < thr - 0.5 * std) &
 # Break data down into a training set and a validation set. AUC cannot be
 # calculated if y_true doesn't contain all casses. There are so few neutrals
 # that I don't think it's worth including these in the multiclass anyway.
-X=df_VADER_train[df_VADER_train['sentiment_cat']>=0].reset_index()['content_lemma']
-y=df_VADER_train[df_VADER_train['sentiment_cat']>=0].reset_index()[['sentiment_cat','sentiment']]
+# Actually, that isn't the case. Neutrals make up about 20% of the dataset, so
+# I should keep them in.
+X=df_VADER_train.reset_index()['content_lemma']
+y=df_VADER_train.reset_index()[['sentiment_cat','sentiment']]
 #X=X.head(1000)
 #y=y.head(1000)
 X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
@@ -146,14 +150,14 @@ model_multi.add(layers.Embedding(input_dim=vocab_size,\
                            output_dim=100,\
                            input_length=100))
 model_multi.add(layers.Bidirectional(layers.LSTM(128)))
-model_multi.add(layers.Dense(2,activation='softmax'))
+model_multi.add(layers.Dense(3,activation='softmax'))
 model_multi.compile(optimizer='adam',\
               loss='categorical_crossentropy',\
               metrics=['accuracy','AUC'])
 model_multi.fit(X_train,\
           y_train_cat,\
           batch_size=256,\
-          epochs=20,\
+          epochs=n_epochs,\
           #epochs=2,\
           validation_data=(X_val,y_val_cat))
 model_multi_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
@@ -190,7 +194,7 @@ g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat
 g.set_axis_labels(x_var = 'Epoch', y_var = 'Value')
 g.set_titles(col_template = '{col_name}')
 for ax in g.axes.flat:
-    ax.xaxis.set_major_locator(tkr.MultipleLocator(1))
+    ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
 g.tight_layout()
 g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_multi_timestamp))
 
@@ -295,7 +299,7 @@ model_reg.compile(optimizer='adam',\
 model_reg.fit(X_train,\
           y_train_reg,\
           batch_size=256,\
-          epochs=20,\
+          epochs=n_epochs,\
           #epochs=2,\
           validation_data=(X_val,y_val_reg))
 model_reg_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
@@ -325,7 +329,7 @@ g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat
 g.set_axis_labels(x_var = 'Epoch', y_var = 'Value')
 g.set_titles(col_template = '{col_name}')
 for ax in g.axes.flat:
-    ax.xaxis.set_major_locator(tkr.MultipleLocator(1))
+    ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
 g.tight_layout()
 g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_reg_timestamp))
 
@@ -359,5 +363,3 @@ score_dict_reg = {'test_mse':mean_squared_error(y_test_reg,predict_test_reg),
 
 np.save('{0}/{1}/score_dict'.format(basefile,model_reg_timestamp),
         score_dict_reg)
-
-# Try multiclass accuracy and AUC
