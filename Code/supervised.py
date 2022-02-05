@@ -124,8 +124,10 @@ n_epochs = 50
 # that I don't think it's worth including these in the multiclass anyway.
 # Actually, that isn't the case. Neutrals make up about 20% of the dataset, so
 # I should keep them in.
-X=df_VADER_train.reset_index()['content_lemma']
-y=df_VADER_train.reset_index()[['sentiment_cat','sentiment']]
+#X=df_VADER_train.reset_index()['content_lemma']
+#y=df_VADER_train.reset_index()[['sentiment_cat','sentiment']]
+X=df_VADER_train['content_lemma']
+y=df_VADER_train[['sentiment_cat','sentiment']]
 #X=X.head(1000)
 #y=y.head(1000)
 X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
@@ -173,6 +175,11 @@ model_multi.save('{0}/{1}/model_multi.h5'.format(basefile,
 # Save history
 np.save('{0}/{1}/model_multi_history'.format(basefile,model_multi_timestamp),
         model_multi.history.history)
+
+# Save tokenizer
+with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_multi_timestamp),
+          'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 ## Load model
 #model_multi_ = load_model('{0}/{1}/model_multi.h5'.format(basefile,
@@ -315,6 +322,11 @@ model_reg.save('{0}/{1}/model_reg.h5'.format(basefile,
 # Save history
 np.save('{0}/{1}/model_reg_history'.format(basefile,model_reg_timestamp),
         model_reg.history.history)
+
+# Save tokenizer
+with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_reg_timestamp),
+          'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 # Plot performance by number of epochs
 df_sns = pd.DataFrame(model_reg.history.history)
