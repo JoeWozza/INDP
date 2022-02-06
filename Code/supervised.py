@@ -7,8 +7,8 @@ Created on Sun Jan 30 16:30:43 2022
 
 import pandas as pd
 ##
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import load_model
 from nltk.stem import WordNetLemmatizer
@@ -16,8 +16,8 @@ from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
 from sklearn.model_selection import train_test_split
-from keras.models import Sequential
-from keras import layers
+from tensorflow.keras.models import Sequential
+from tensorflow.keras import layers
 from sklearn.metrics import accuracy_score, roc_auc_score, mean_squared_error, median_absolute_error
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -72,7 +72,7 @@ def data_cleaning(text_list):
     lemmatizer=WordNetLemmatizer()
     tokenizer=TweetTokenizer()
     reconstructed_list=[]
-    for each_text in text_list: 
+    for each_text in text_list:
         lemmatized_tokens=[]
         tokens=tokenizer.tokenize(each_text.lower())
         pos_tags=pos_tag(tokens)
@@ -113,7 +113,7 @@ df_VADER_test2 = df_VADER[(df_VADER['sentconf'] < thr - 0.5 * std) &
                          (df_VADER['sentconf'] > 0)].reset_index()
 
 #%%
-n_epochs = 50
+n_epochs = 100
 
 # Remove neutrals
 #df_VADER = df_VADER[df_VADER.sentiment_cat >= 0].reset_index()
@@ -128,8 +128,8 @@ n_epochs = 50
 #y=df_VADER_train.reset_index()[['sentiment_cat','sentiment']]
 X=df_VADER_train['content_lemma']
 y=df_VADER_train[['sentiment_cat','sentiment']]
-#X=X.head(1000)
-#y=y.head(1000)
+#X=X.head(10000)
+#y=y.head(10000)
 X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
 X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
                                                 test_size=.33)
@@ -223,7 +223,7 @@ y_test_cat=to_categorical(y_test['sentiment_cat'])
 predict_test = model_multi.predict(X_test)
 predict_test_cat = np.around(predict_test)
 print(predict_test_cat.sum(axis=0))
-#here
+
 print(roc_auc_score(y_test_cat,predict_test)) #0.8567052301184198
 print(accuracy_score(y_test_cat,predict_test_cat)) #0.9240584482403786
 
