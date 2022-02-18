@@ -128,5 +128,42 @@ class VADER():
             else:
                 conf = 0
             return conf
+    
+    # Categorise sentiment
+    # var: series containing sentiment score variable (-1 <= var <= 1)
+    def cat_sentiment(self,var):
+        # Positive
+        if var >= 0.05:
+            return 1
+        # Negative
+        elif var <= - 0.05:
+            return -1
+        # Neutral
+        else:
+            return 0
+    
+    # Calculate thresholds for categorising sentiment confidence
+    # var: series containing sentiment confidence variable
+    def cat_sentconf_stats(self,var):
+        mean = var.mean()
+        std = var.std()
+        return mean, std
+    
+    # Categorise sentiment confidence (in accordance with Sazzed & Jayarathna, 
+    # 2021)
+    # var: series containing sentiment confidence variable
+    # mean_cs: mean confidence score
+    # std_cs: standard deviation of confidence score
+    def cat_sentconf(self,var,mean_cs,std_cs):
+        if var >= mean_cs + 0.5*std_cs:
+            return 'VeryHigh'
+        elif var >= mean_cs + 0.5*std_cs - 0.5*std_cs:
+            return 'High'
+        elif var >= mean_cs + 0.5*std_cs - std_cs:
+            return 'Low'
+        elif var > 0:
+            return 'VeryLow'
+        else:
+            return 'Zero'
 
     
