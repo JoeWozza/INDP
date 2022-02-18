@@ -33,17 +33,6 @@ df_tweets_deduped_eng = df_tweets_eng.drop_duplicates(subset=['tweet_id'])
 df_in = df_tweets_deduped_eng[['tweet_text','tweet_id']]
 df_in['tweet_id'] = df_in['tweet_id'].astype('Int64').apply(str)
 
-#%% LRSentiA
-
-from SSentiA import LRSentiA
-class_lr = LRSentiA.LexicalAnalyzer()
-
-# Drop label - only in the input to make it work
-#df_in = df_in.head(20)
-data_LRSentiA, predictions_LRSentiA, pred_confidence_scores_LRSentiA, total_positive_score_LRSentiA, total_negative_score_LRSentiA, tweet_ids = class_lr.main(df_in)
-# some have 86444 records, predictions_LRSentiA, total_negative_score_LRSentiA,
-# total_positive_score_LRSentiA and tweet_ids only have 86443.
-
 #%% VADER
 
 import pandas as pd
