@@ -63,6 +63,13 @@ df_VADER['content_lemma'] = (df_VADER['tweet_text'].apply(class_v.clean)
 df_VADER['sentiment'] = df_VADER['content_lemma'].apply(class_v.VADERsentiment)
 # Calculate sentiment confidence
 df_VADER['sentconf'] = df_VADER['content_lemma'].apply(class_v.sentconf)
+# Categorise sentiment score
+df_VADER['sentiment_cat'] = df_VADER.apply(lambda row: 
+    class_v.cat_sentiment(row['sentiment']), axis=1)
+# Categorise sentiment confidence score
+mean_cs,std_cs = class_v.cat_sentconf_stats(df_VADER['sentconf'])
+df_VADER['sentconf_cat'] = df_VADER.apply(lambda row:
+    class_v.cat_sentconf(row['sentconf'],mean_cs,std_cs), axis=1)
 
 # Output results to csv
 df_VADER.to_csv("INDP//Data//df_VADER.csv")
