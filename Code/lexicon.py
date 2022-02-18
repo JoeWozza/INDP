@@ -12,7 +12,22 @@ filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
+# Load packages
 import pandas as pd
+import re
+import emoji
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize
+from nltk import pos_tag
+from nltk.corpus import wordnet
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+analyzer = SentimentIntensityAnalyzer()
 from INDP.Code import VADER
 class_v = VADER.VADER()
 
@@ -33,23 +48,6 @@ for f in tweets_files_eng:
 df_VADER = df_tweets_eng.drop_duplicates(subset=['tweet_id']).reset_index().drop(columns=['index','Unnamed: 0'])
 
 #%% VADER
-
-# Load packages
-import pandas as pd
-import re
-import emoji
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-import nltk
-nltk.download('punkt')
-from nltk.tokenize import word_tokenize
-from nltk import pos_tag
-from nltk.corpus import wordnet
-nltk.download('stopwords')
-from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-nltk.download('wordnet')
-nltk.download('averaged_perceptron_tagger')
-analyzer = SentimentIntensityAnalyzer()
 
 # Define stopwords list
 stopwords_fin = class_v.fin_stopwords(stopwords.words('english'))
