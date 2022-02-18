@@ -49,7 +49,6 @@ from nltk import pos_tag
 from nltk.corpus import wordnet
 nltk.download('stopwords')
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
