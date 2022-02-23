@@ -36,64 +36,15 @@ filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
+from INDP.Code import LSTM
+class_lstm = LSTM.LSTM()
+
 basefile = 'INDP/Models/model_reg'
 
-df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
+df_VADER = pd.read_csv("INDP//Data//df_VADER_.csv")
 
 # Format tweet_id
 df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
-
-# Categorise sentiment (must be 0, 1 and 2 for to_categorical to work)
-def cat_sentiment(row):
-    # Positive
-    if row['sentiment'] >= 0.05:
-        return 2
-    # Negative
-    elif row['sentiment'] <= - 0.05:
-        return 0
-    # Neutral
-    else:
-        return 1
-
-def cat_setconf(row):
-    if row['sentconf'] >= thr:
-        return 'VeryHigh'
-    elif row['sentconf'] >= thr - 0.5 * std:
-        return 'High'
-    elif row['sentconf'] >= thr - std:
-        return 'Low'
-    elif row['sentconf'] > 0:
-        return 'VeryLow'
-    else:
-        return 'Zero'
-
-# Code taken from https://towardsdatascience.com/sentiment-analysis-comparing-3-common-approaches-naive-bayes-lstm-and-vader-ab561f834f89
-
-def data_cleaning(text_list): 
-    stopwords_rem=False
-    stopwords_en=stopwords.words('english')
-    lemmatizer=WordNetLemmatizer()
-    tokenizer=TweetTokenizer()
-    reconstructed_list=[]
-    for each_text in text_list:
-        lemmatized_tokens=[]
-        tokens=tokenizer.tokenize(each_text.lower())
-        pos_tags=pos_tag(tokens)
-        for each_token, tag in pos_tags: 
-            if tag.startswith('NN'): 
-                pos='n'
-            elif tag.startswith('VB'): 
-                pos='v'
-            else: 
-                pos='a'
-            lemmatized_token=lemmatizer.lemmatize(each_token, pos)
-            if stopwords_rem: # False 
-                if lemmatized_token not in stopwords_en: 
-                    lemmatized_tokens.append(lemmatized_token)
-            else: 
-                lemmatized_tokens.append(lemmatized_token)
-        reconstructed_list.append(' '.join(lemmatized_tokens))
-    return reconstructed_list
 
 def get_dataset(row):
     if "_" in row['variable']:
@@ -102,53 +53,23 @@ def get_dataset(row):
         val = 'train'
     return val
 
-df_VADER['sentiment_cat'] = df_VADER.apply(lambda row: cat_sentiment(row), axis=1)
+# Categorise sentiment (must be 0, 1 and 2 for to_categorical to work)
+#df_VADER['sentiment_cat'] = df_VADER['sentiment_cat']+1
 
-# Categorise sentiment confidence
-mcs = df_VADER.sentconf.mean()
-std = df_VADER.sentconf.std()
-thr = mcs + 0.5 * std
+# Use tweets with high or very high sentiment confidence to train model
+df_VADER_train = df_VADER[df_VADER['sentconf_cat'].isin(
+        ['VeryHigh','High'])].reset_index()
+# Create separate test dataset from tweets with low or very low sentiment 
+# confidence
+df_VADER_test2 = df_VADER[df_VADER['sentconf_cat'].isin(
+        ['Low','VeryLow'])].reset_index()
 
-df_VADER['sentconf_cat'] = df_VADER.apply(lambda row: cat_setconf(row), axis=1)
+#%% Prepare train, validation, test and test2 datasets
 
-df_VADER_train = df_VADER[df_VADER['sentconf'] >= thr - 0.5 * std].reset_index()
-df_VADER_test2 = df_VADER[(df_VADER['sentconf'] < thr - 0.5 * std) & 
-                         (df_VADER['sentconf'] > 0)].reset_index()
-
-#%%
-df_VADER_train_samp = df_VADER_train.sample(n=500)
-df_VADER_test2_samp = df_VADER_test2.sample(n=500)
-X=df_VADER_train_samp['content_lemma']
-y=df_VADER_train_samp[['sentiment_cat','sentiment']]
-#X=X.head(1000)
-#y=y.head(1000)
-X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
-X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
-                                                test_size=.33)
-
-# Fit and transform the data
-X_train=data_cleaning(X_train)
-X_val=data_cleaning(X_val)
-tokenizer=Tokenizer()
-tokenizer.fit_on_texts(X_train)
-vocab_size=len(tokenizer.word_index)+1
-print(f'Vocab Size: {vocab_size}')
-X_train=pad_sequences(tokenizer.texts_to_sequences(X_train), maxlen=100)
-X_val=pad_sequences(tokenizer.texts_to_sequences(X_val), maxlen=100)
-
-# Transform the test data
-X_test=data_cleaning(X_test)
-X_test=pad_sequences(tokenizer.texts_to_sequences(X_test), maxlen=100)
-
-X_test2=df_VADER_test2_samp['content_lemma']
-y_test2=df_VADER_test2_samp[['sentiment_cat','sentiment']]
-#X_test2=X_test2.head(1000)
-#y_test2=y_test2.head(1000)
-X_test2=data_cleaning(X_test2)
-X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), maxlen=100)
-
-y_train_reg=y_train['sentiment']
-y_val_reg=y_val['sentiment']
+X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size = (
+        class_lstm.train_val_test_test2(df_VADER_train,df_VADER_test2,50,50,
+                             'content_lemma','sentiment',100)
+        )
 
 #%%
 
@@ -459,8 +380,19 @@ for index,row in df_hp.iterrows():
     np.save('{0}/{1}/score_dict'.format(basefile,model_reg_timestamp),
             score_dict_reg)
 
+folders = ['2022-02-18_135831.330432','2022-02-18_175759.443774',
+           '2022-02-18_213521.783721','2022-02-19_005353.095109',
+           '2022-02-19_094306.430585']
 
+# Loop through folders and append results to dataframe
+df_scores = pd.DataFrame()
+for f in folders:
+    print(f)
+    score_dict = np.load('{0}/{1}/score_dict.npy'.format(basefile,f),allow_pickle='TRUE').item()
+    score_dict['model'] = f
+    df_scores = df_scores.append(score_dict, ignore_index=True)
 
+# All perform well, but the best on correlation, mae and mse is 2022-02-18_175759.443774
 
 
 
