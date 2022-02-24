@@ -140,6 +140,24 @@ class LSTM():
         with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_timestamp),
                   'wb') as handle:
             pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            
+    def epoch_perf_plot(self,model,model_timestamp,basefile):
+        # Plot performance by number of epochs
+        df_sns = pd.DataFrame(model.history.history)
+        df_sns['epoch'] = df_sns.index + 1
+        df_sns_melt = pd.melt(df_sns, id_vars='epoch')
+        
+        df_sns_melt['dataset'] = df_sns_melt.apply(lambda row: get_dataset(row), axis=1)
+        df_sns_melt['stat'] = df_sns_melt['variable'].str.split('_').str[-1]
+        
+        g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat',
+                    kind='line')
+        g.set_axis_labels(x_var = 'Epoch', y_var = 'Value')
+        g.set_titles(col_template = '{col_name}')
+        for ax in g.axes.flat:
+            ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
+        g.tight_layout()
+        g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_timestamp))
     
     def hp_loop(self,n_units,dropouts,n_hiddenlayers,n_epochs,learning_rates,
                 basefile):
@@ -155,6 +173,12 @@ class LSTM():
                             print(learning_rate)
                             print('')
                             start = datetime.now()
+                            # Train LSTM model
                             self.train_LSTM(vocab_size)
+                            # Save LSTM model and related history and tokenizer
                             self.save_model(model,model_timestamp,basefile)
+                            # Plot performance by number of epochs
+                            self.epoch_perf_plot(model_model_timestamp,
+                                                 basefile)
+                            
                             
