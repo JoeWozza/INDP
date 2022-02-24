@@ -71,41 +71,6 @@ df_scores = class_lstm.hp_loop(df_VADER_train,n_units,dropouts,n_hiddenlayers,
                                'content_lemma','sentiment',100,df_VADER_test2,
                                500)
 
-df_scores.to_csv('{0}/df_scores_{1}.csv'.format(basefile,str(datetime.now()).replace(' ','_').replace(':','')))
-
-## Get results from all hyperparameter combinations into dataframe
-# Define common string in folder name
-folderstring1 = '2022-02-09_'
-folderstring2 = '2022-02-10_'
-folderstring3 = '2022-02-11_'
-folderstring4 = '2022-02-12_'
-folderstring5 = '2022-02-13_'
-folderstring6 = '2022-02-14_'
-folderstring7 = '2022-02-16_'
-folderstring8 = '2022-02-17_'
-folderstring9 = '2022-02-18_'
-# Get list of model timestamps
-all_folders = listdir(filepath + "\INDP\Models\model_reg")
-folders = [s for s in all_folders if (folderstring1 in s) or 
-           (folderstring2 in s) or (folderstring3 in s) or (folderstring4 in s)
-            or (folderstring5 in s) or (folderstring6 in s) or 
-            (folderstring7 in s) or (folderstring8 in s) or 
-            (folderstring9 in s)]
-
-# Loop through folders and append results to dataframe
-df_scores = pd.DataFrame()
-for f in folders:
-    print(f)
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(basefile,f),allow_pickle='TRUE').item()
-    score_dict['model'] = f
-    df_scores = df_scores.append(score_dict, ignore_index=True)
-
-print(pd.value_counts(df_scores.dropout))
-print(pd.value_counts(df_scores.epochs))
-print(pd.value_counts(df_scores.hiddenlayers))
-print(pd.value_counts(df_scores.learning_rate))
-print(pd.value_counts(df_scores.units))
-
 #%% Run a few candidate models on bigger samples
 
 df_VADER_train_samp = df_VADER_train.sample(n=10000)
