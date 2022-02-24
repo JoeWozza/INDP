@@ -15,6 +15,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
+from tensorflow.keras.models import load_model
 #from sklearn.model_selection import train_test_split
 #from tensorflow.keras.models import Sequential
 #from tensorflow.keras import layers
@@ -39,8 +40,8 @@ chdir(filepath)
 
 from INDP.Code import LSTM
 class_lstm = LSTM.LSTM()
-from INDP.Code import TweetScrape
-class_ts = TweetScrape.TweetScrape()
+from INDP.Code import VADER
+class_v = VADER.VADER()
 
 basefile = 'INDP/Models/model_reg'
 
@@ -49,36 +50,40 @@ basefile = 'INDP/Models/model_reg'
 files = listdir("{0}\\INDP\\Data".format(filepath))
 
 # Define common string at start of file names
-filestring_mids = 'df_mids_tweets_tweepy_'
 filestring_utlas = 'df_tweets_tweepy_'
 # Get list of all files containing common string
-tweets_files_mids = [s for s in files if filestring_mids in s]
 tweets_files_utlas = [s for s in files if filestring_utlas in s]
-# Combine data into single dataframes
-df_tweets_mids = pd.DataFrame()
-for f in tweets_files_mids:
-    print(f)
-    df_tweets_mids = df_tweets_mids.append(pd.read_csv("INDP\\Data\\" + f))
-df_tweets_utlas = pd.DataFrame()
+# Combine data into single dataframe
+df_tweets = pd.DataFrame()
 for f in tweets_files_utlas:
     print(f)
-    df_tweets_utlas = df_tweets_utlas.append(pd.read_csv("INDP\\Data\\" + f))
+    df_tweets = df_tweets.append(pd.read_csv("INDP\\Data\\" + f))
 
-# Deduplicate by tweet_id
-df_tweets_utlas_deduped = df_tweets_utlas.drop_duplicates(
-        subset=['tweet_id','area']).reset_index().drop(columns=
-               ['index','Unnamed: 0'])
+# Deduplicate by tweet_id and UTLA
+df_tweets_deduped = (df_tweets
+                     .drop_duplicates(subset=['tweet_id','area'])
+                     .reset_index().drop(columns=['index','Unnamed: 0']))
 
-# Check whether any of Midlands tweets (that haven't already) can be assigned 
-# to UTLAs
-df_utlas = pd.read_csv("{0}/INDP/Data/df_utlas_90.csv".format(filepath))
-utlas = df_utlas.drop_duplicates(subset=['utla']).utla
+# Load model
+model_timestamp = '2022-02-18_175759.443774'
 
-df_tweets_utlas_deduped_plus = df_tweets_utlas_deduped.append(
-        class_ts.manual_assign_areas(df_tweets_mids,utlas)).drop_duplicates(
-        subset=['tweet_id','area'])
+model = load_model('{0}/{1}/model_reg.h5'.format(basefile,
+                   model_timestamp))
 
-print(len(df_tweets_utlas_deduped))
-print(len(df_tweets_utlas_deduped_plus))
+# Load tokenizer associated with model
+with open('{0}/{1}/tokenizer.pickle'.format(basefile,
+          model_timestamp), 'rb') as handle:
+    tokenizer = pickle.load(handle)
+
+# VADER cleaning: remove twitter handles, URLs and most special characters
+X_text = df_tweets_deduped['tweet_text'].apply(class_v.clean)
+# LSTM cleaning: lemmatisation and tokenisation
+X = class_lstm.score_prep(X_text,tokenizer,100)
+# Score model on Midlands tweets
+df_tweets_deduped['LSTM_sent'] = model.predict(X)
+df_tweets_deduped['tweet_text_clean'] = X_text
+
+
+
 
 
