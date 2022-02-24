@@ -141,12 +141,22 @@ class LSTM():
             ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
         g.tight_layout()
         g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_timestamp))
+        
+    def test2_prep(self,df_test2,test2_samp,tokenizer,textvar,sentvar,maxlen):
+        # Prepare test2 data
+        df_test2_samp = df_test2.sample(n=test2_samp)
+        X_test2=df_test2_samp[textvar]
+        X_test2=self.score_prep(X_test2,tokenizer,textvar,
+                                maxlen)
+        y_test2=df_test2_samp[sentvar]
+        return X_test2,y_test2
     
     def hp_loop(self,df_train,n_units,dropouts,n_hiddenlayers,n_epochs,
-                learning_rates,basefile,test2_samp):
+                learning_rates,basefile,train_samp,textvar,sentvar,
+                maxlen,df_test2,test2_samp):
         X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
-                self.train_val_test(df_train,50,'content_lemma',
-                                          'sentiment',100))
+                self.train_val_test(df_train,train_samp,textvar,sentvar,maxlen)
+                )
         for units in n_units:
             for dropout in dropouts:
                 for hiddenlayers in n_hiddenlayers:
@@ -163,7 +173,7 @@ class LSTM():
                             X_val=self.score_prep(X_val,tokenizer,textvar,
                                                   maxlen)                            
                             # Train LSTM model
-                            self.train_LSTM(vocab_size)
+                            model,model_timestamp = self.train_LSTM(vocab_size)
                             # Save LSTM model and related history and tokenizer
                             self.save_model(model,model_timestamp,basefile)
                             # Plot performance by number of epochs
@@ -173,12 +183,9 @@ class LSTM():
                             X_test=self.score_prep(X_test,tokenizer,textvar,
                                                    maxlen)
                             # Prepare test2 data
-                            df_test2_samp = df_test2.sample(n=test2_samp)
-                            X_test2=self.score_prep(X_test2,tokenizer,textvar,
-                                                    maxlen)
-                            y_test2=df_test2_samp[sentvar]
-                            X_test2=self.data_cleaning(X_test2)
-                            X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), 
-                                                  maxlen=maxlen)
+                            X_test2,y_test2=self.test2_prep(df_test2,
+                                                            test2_samp,
+                                                            tokenizer,textvar,
+                                                            sentvar,maxlen):
                             
                             
