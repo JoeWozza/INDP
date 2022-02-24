@@ -88,7 +88,7 @@ class LSTM():
         model.add(layers.Embedding(input_dim=vocab_size,\
                                    output_dim=100,\
                                    input_length=100))
-        for i in range(hiddenlayers):
+        for i in range(int(hiddenlayers)):
             if i+1 < hiddenlayers:
                 model.add(layers.Bidirectional(layers.LSTM(units=units, 
                                                                dropout=dropout, 
@@ -143,8 +143,8 @@ class LSTM():
             self.get_dataset(row), axis=1)
         df_sns_melt['stat'] = df_sns_melt['variable'].str.split('_').str[-1]
         
-        g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat',
-                    kind='line')
+        g = sns.relplot(data=df_sns_melt,x='epoch',y='value',hue='dataset', 
+                        col='stat',kind='line')
         g.set_axis_labels(x_var = 'Epoch', y_var = 'Value')
         g.set_titles(col_template = '{col_name}')
         for ax in g.axes.flat:
@@ -184,8 +184,7 @@ class LSTM():
                 score_dict)
         return score_dict                    
     
-    def hp_loop(self,df_train,n_units,dropouts,n_hiddenlayers,n_epochs,
-                learning_rates,basefile,train_samp,textvar,sentvar,
+    def hp_loop(self,df_train,df_hp,basefile,train_samp,textvar,sentvar,
                 maxlen,df_test2,test2_samp):
         X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
                 self.train_val_test(df_train,train_samp,textvar,sentvar,maxlen)
@@ -195,53 +194,50 @@ class LSTM():
         # Prepare test data
         X_test=self.score_prep(X_test,tokenizer,textvar,maxlen)
         df_scores=pd.DataFrame()
-        for units in n_units:
-            for dropout in dropouts:
-                for hiddenlayers in n_hiddenlayers:
-                    for epochs in n_epochs:
-                        for learning_rate in learning_rates:
-                            print(units)
-                            print(dropout)
-                            print(hiddenlayers)
-                            print(epochs)
-                            print(learning_rate)
-                            print('')
-                            start = datetime.now()
-                            # Train LSTM model
-                            model,model_timestamp = self.train_LSTM(X_train,
-                                                        y_train,X_val,y_val,
-                                                        vocab_size,units,
-                                                        dropout,hiddenlayers,
-                                                        epochs,learning_rate)
-                            # Save LSTM model and related history and tokenizer
-                            self.save_model(model,tokenizer,model_timestamp,
-                                            basefile)
-                            # Plot performance by number of epochs
-                            self.epoch_perf_plot(model,model_timestamp,
-                                                 basefile)
-                            # Prepare test2 data
-                            X_test2,y_test2=self.test2_prep(df_test2,
-                                                            test2_samp,
-                                                            tokenizer,textvar,
-                                                            sentvar,maxlen)
-                            # Score model on test dataset
-                            predict_test = model.predict(X_test)
-                            # Score model on 'test2' dataset                
-                            predict_test2 = model.predict(X_test2)
-                            # Print time taken
-                            end = datetime.now()
-                            print(str(end-start))
-                            # Output performance metrics
-                            score_dict = self.score_dict(units,dropout,
-                                                         hiddenlayers,epochs,
-                                                         learning_rate,start,
-                                                         end,y_test,
-                                                         predict_test,sentvar,
-                                                         y_test2,predict_test2,
-                                                         basefile,
-                                                         model_timestamp)
-                            df_scores = df_scores.append(score_dict, 
-                                                         ignore_index=True)
+        
+        for index,row in df_hp.iterrows():
+            
+            dropout = row['dropout']
+            epochs = row['epochs'].astype('int')
+            hiddenlayers = row['hiddenlayers']
+            learning_rate = row['learning_rate']
+            units = row['units'].astype('int')
+            
+            print(dropout)
+            print(epochs)
+            print(hiddenlayers)
+            print(learning_rate)
+            print(units)
+            print('')
+            
+            start = datetime.now()
+            # Train LSTM model
+            model,model_timestamp = self.train_LSTM(X_train,y_train,X_val,
+                                                    y_val,vocab_size,units,
+                                                    dropout,hiddenlayers,
+                                                    epochs,learning_rate)
+            # Save LSTM model and related history and tokenizer
+            self.save_model(model,tokenizer,model_timestamp,basefile)
+            # Plot performance by number of epochs
+            self.epoch_perf_plot(model,model_timestamp,basefile)
+            # Prepare test2 data
+            X_test2,y_test2=self.test2_prep(df_test2,test2_samp,tokenizer,
+                                            textvar,sentvar,maxlen)
+            # Score model on test dataset
+            predict_test = model.predict(X_test)
+            # Score model on 'test2' dataset                
+            predict_test2 = model.predict(X_test2)
+            # Print time taken
+            end = datetime.now()
+            print(str(end-start))
+            # Output performance metrics
+            score_dict = self.score_dict(units,dropout,hiddenlayers,epochs,
+                                         learning_rate,start,end,y_test,
+                                         predict_test,sentvar,y_test2,
+                                         predict_test2,basefile,
+                                         model_timestamp)
+            
+            df_scores = df_scores.append(score_dict,ignore_index=True)
         return df_scores
                             
                             
