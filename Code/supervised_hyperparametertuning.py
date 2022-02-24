@@ -39,10 +39,14 @@ chdir(filepath)
 
 from INDP.Code import LSTM
 class_lstm = LSTM.LSTM()
+from INDP.Code import VADER
+class_v = VADER.VADER()
 
 basefile = 'INDP/Models/model_reg'
 
-df_VADER = pd.read_csv("INDP//Data//df_VADER_.csv")
+df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
+
+df_VADER['tweet_text_clean'] = df_VADER['tweet_text'].apply(class_v.clean)
 
 # Format tweet_id
 df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
@@ -73,7 +77,7 @@ df_hp1 = pd.DataFrame(list(product(n_units,dropouts,n_hiddenlayers,n_epochs,
         columns=['units','dropout','hiddenlayers','epochs','learning_rate'])
 
 df_scores_hp1 = class_lstm.hp_loop(df_VADER_train,df_hp1,basefile,500,
-                                   'content_lemma','sentiment',100,
+                                   'tweet_text_clean','sentiment',100,
                                    df_VADER_test2,500)
 df_scores_hp1.to_csv('{0}/df_scores_hp1.csv'.format(basefile))
 
@@ -89,7 +93,7 @@ df_hp2 = pd.DataFrame([[0.1,75,3,0.001,128],
                                  'learning_rate','units'])
 
 df_scores_hp2 = class_lstm.hp_loop(df_VADER_train,df_hp2,basefile,10000,
-                                   'content_lemma','sentiment',100,
+                                   'tweet_text_clean','sentiment',100,
                                    df_VADER_test2,10000)
 df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(basefile))
 # All perform well, but the best on correlation, mae and mse is 
