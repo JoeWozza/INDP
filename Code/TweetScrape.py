@@ -172,7 +172,8 @@ class TweetScrape():
         # areas: list of areas to assign tweets to
         for area in areas:
             print(area)
-            df_temp = df_in[df_in.user_location.str.contains(area)].copy()
+            df_temp = df_in[df_in.user_location.str.contains(area, 
+                                                             na=False)].copy()
             df_temp.area = area
         
         return df_temp
