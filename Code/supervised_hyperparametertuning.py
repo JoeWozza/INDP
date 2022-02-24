@@ -28,6 +28,7 @@ import pickle
 ##
 import numpy as np
 import os
+from itertools import product
 
 from os import chdir, listdir
 
@@ -66,8 +67,12 @@ n_hiddenlayers = [1,2,3]
 n_epochs = [25,50,75]
 learning_rates = [.001,.01,.1]
 
-df_scores = class_lstm.hp_loop(df_VADER_train,n_units,dropouts,n_hiddenlayers,
-                               n_epochs,learning_rates,basefile,500,
+# Dataframe containing all combinations of hyperparameters
+df_hp = pd.DataFrame(list(product(n_units,dropouts,n_hiddenlayers,n_epochs,
+                                  learning_rates)),
+        columns=['units','dropout','hiddenlayers','epochs','learning_rate'])
+
+df_scores = class_lstm.hp_loop(df_VADER_train,df_hp,basefile,500,
                                'content_lemma','sentiment',100,df_VADER_test2,
                                500)
 
