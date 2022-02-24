@@ -25,6 +25,8 @@ import seaborn as sns
 import matplotlib.ticker as tkr
 from datetime import datetime
 import pickle
+import os
+import numpy as np
 
 class LSTM():
     
@@ -59,7 +61,8 @@ class LSTM():
         X=df_train_samp[textvar]
         y=df_train_samp[sentvar]
         # Do train/test split to get trainining set
-        X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
+        X_train, X_testval, y_train, y_testval=train_test_split(X, y, 
+                                                                test_size=.3)
         # Do train/test split again to get test/validation sets
         X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
                                                         test_size=.33)
@@ -74,8 +77,8 @@ class LSTM():
         
         return X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer                
     
-    def score_prep(self,df,tokenizer,textvar,maxlen):
-        X=df[textvar]
+    def score_prep(self,X,tokenizer,textvar,maxlen):
+        #X=df[textvar]
         X=self.data_cleaning(X)
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
@@ -108,7 +111,7 @@ class LSTM():
         print(model_timestamp)
         return model, model_timestamp
         
-    def save_model(self,model,model_timestamp,basefile):
+    def save_model(self,model,tokenizer,model_timestamp,basefile):
         # Create folder for model
         if not os.path.exists('{0}/{1}'.format(basefile,model_timestamp)):
             os.makedirs('{0}/{1}'.format(basefile,model_timestamp))
@@ -188,6 +191,10 @@ class LSTM():
         X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
                 self.train_val_test(df_train,train_samp,textvar,sentvar,maxlen)
                 )
+        # Prepare validation data
+        X_val=self.score_prep(X_val,tokenizer,textvar,maxlen)
+        # Prepare test data
+        X_test=self.score_prep(X_test,tokenizer,textvar,maxlen)
         df_scores=pd.DataFrame()
         for units in n_units:
             for dropout in dropouts:
@@ -201,19 +208,18 @@ class LSTM():
                             print(learning_rate)
                             print('')
                             start = datetime.now()
-                            # Prepare validation data
-                            X_val=self.score_prep(X_val,tokenizer,textvar,
-                                                  maxlen)                            
                             # Train LSTM model
-                            model,model_timestamp = self.train_LSTM(vocab_size)
+                            model,model_timestamp = self.train_LSTM(X_train,
+                                                        y_train,X_val,y_val,
+                                                        vocab_size,units,
+                                                        dropout,hiddenlayers,
+                                                        epochs,learning_rate)
                             # Save LSTM model and related history and tokenizer
-                            self.save_model(model,model_timestamp,basefile)
+                            self.save_model(model,tokenizer,model_timestamp,
+                                            basefile)
                             # Plot performance by number of epochs
-                            self.epoch_perf_plot(model_model_timestamp,
+                            self.epoch_perf_plot(model,model_timestamp,
                                                  basefile)
-                            # Prepare test data
-                            X_test=self.score_prep(X_test,tokenizer,textvar,
-                                                   maxlen)
                             # Prepare test2 data
                             X_test2,y_test2=self.test2_prep(df_test2,
                                                             test2_samp,
@@ -221,10 +227,8 @@ class LSTM():
                                                             sentvar,maxlen)
                             # Score model on test dataset
                             predict_test = model.predict(X_test)
-                            y_test = y_test[sentvar]                   
                             # Score model on 'test2' dataset                
                             predict_test2 = model.predict(X_test2)
-                            y_test2 = y_test2[sentvar]
                             # Print time taken
                             end = datetime.now()
                             print(str(end-start))
