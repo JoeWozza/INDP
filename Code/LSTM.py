@@ -96,7 +96,8 @@ class LSTM():
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
     
-    def train_LSTM(self,vocab_size):
+    def train_LSTM(self,X_train,y_train,X_val,y_val,vocab_size,units,dropout,
+                   hiddenlayers,epochs,learning_rate):
         model_reg=Sequential()
         model_reg.add(layers.Embedding(input_dim=vocab_size,\
                                    output_dim=100,\
