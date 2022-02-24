@@ -151,12 +151,36 @@ class LSTM():
         y_test2=df_test2_samp[sentvar]
         return X_test2,y_test2
     
+    def score_dict(self,units,dropout,hiddenlayers,epochs,learning_rate,
+                   start,end,y_test,predict_test,sentvar,y_test2,predict_test2,
+                   basefile,model_timestamp):
+        score_dict = {'model': model_timestamp,
+                      'units': units,
+                      'dropout': dropout,
+                      'hiddenlayers': hiddenlayers,
+                      'epochs': epochs,
+                      'learning_rate': learning_rate,
+                      'time_taken': str(end-start),
+                      'test_mse':mean_squared_error(y_test,predict_test),
+                      'test_mae':median_absolute_error(y_test,predict_test),
+                      'test_corr':y_test.reset_index()[sentvar].corr(
+                              pd.Series(predict_test[:,0])),
+                      'test2_mse':mean_squared_error(y_test2,predict_test2),
+                      'test2_mae':median_absolute_error(y_test2,predict_test2),
+                      'test2_corr':y_test2.reset_index()[sentvar].corr(
+                              pd.Series(predict_test2[:,0]))
+                          }
+        np.save('{0}/{1}/score_dict'.format(basefile,model_timestamp),
+                score_dict)
+        return score_dict                    
+    
     def hp_loop(self,df_train,n_units,dropouts,n_hiddenlayers,n_epochs,
                 learning_rates,basefile,train_samp,textvar,sentvar,
                 maxlen,df_test2,test2_samp):
         X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
                 self.train_val_test(df_train,train_samp,textvar,sentvar,maxlen)
                 )
+        df_scores=pd.DataFrame()
         for units in n_units:
             for dropout in dropouts:
                 for hiddenlayers in n_hiddenlayers:
@@ -186,6 +210,27 @@ class LSTM():
                             X_test2,y_test2=self.test2_prep(df_test2,
                                                             test2_samp,
                                                             tokenizer,textvar,
-                                                            sentvar,maxlen):
+                                                            sentvar,maxlen)
+                            # Score model on test dataset
+                            predict_test = model.predict(X_test)
+                            y_test = y_test[sentvar]                   
+                            # Score model on 'test2' dataset                
+                            predict_test2 = model.predict(X_test2)
+                            y_test2 = y_test2[sentvar]
+                            # Print time taken
+                            end = datetime.now()
+                            print(str(end-start))
+                            # Output performance metrics
+                            score_dict = self.score_dict(units,dropout,
+                                                         hiddenlayers,epochs,
+                                                         learning_rate,start,
+                                                         end,y_test,
+                                                         predict_test,sentvar,
+                                                         y_test2,predict_test2,
+                                                         basefile,
+                                                         model_timestamp)
+                            df_scores = df_scores.append(score_dict, 
+                                                         ignore_index=True)
+        return df_scores
                             
                             
