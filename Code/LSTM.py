@@ -54,11 +54,15 @@ class LSTM():
     def train_val_test_test2(self,df_train,df_test2,train_samp,test2_samp,
                              textvar,sentvar,maxlen):
         
+        # Take samples of training and 'test2' datasets
         df_train_samp = df_train.sample(n=train_samp)
         df_test2_samp = df_test2.sample(n=test2_samp)
+        # Split into X and y variables
         X=df_train_samp[textvar]
         y=df_train_samp[sentvar]
+        # Do train/test split to get trainining set
         X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
+        # Do train/test split again to get test/validation sets
         X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
                                                         test_size=.33)
         
@@ -85,6 +89,12 @@ class LSTM():
                               maxlen=maxlen)
                 
         return X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size
+    
+    def score_prep(self,df,tokenizer,textvar,maxlen):
+        X=df[textvar]
+        X=data_cleaning(X)
+        X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
+        return X
     
     def train_LSTM(self,vocab_size):
         model_reg=Sequential()
