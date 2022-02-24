@@ -51,8 +51,7 @@ class LSTM():
             reconstructed_list.append(' '.join(lemmatized_tokens))
         return reconstructed_list
     
-    def train_val_test_test2(self,df_train,df_test2,train_samp,test2_samp,
-                             textvar,sentvar,maxlen):
+    def train_val_test(self,df_train,train_samp,textvar,sentvar,maxlen):
         
         # Take samples of training dataset
         df_train_samp = df_train.sample(n=train_samp)
@@ -143,8 +142,11 @@ class LSTM():
         g.tight_layout()
         g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_timestamp))
     
-    def hp_loop(self,n_units,dropouts,n_hiddenlayers,n_epochs,learning_rates,
-                basefile,test2_samp):
+    def hp_loop(self,df_train,n_units,dropouts,n_hiddenlayers,n_epochs,
+                learning_rates,basefile,test2_samp):
+        X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
+                self.train_val_test(df_train,50,'content_lemma',
+                                          'sentiment',100))
         for units in n_units:
             for dropout in dropouts:
                 for hiddenlayers in n_hiddenlayers:
