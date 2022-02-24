@@ -88,7 +88,8 @@ class LSTM():
         X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), 
                               maxlen=maxlen)
                 
-        return X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size
+        return X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,
+            vocab_size,tokenizer
     
     def score_prep(self,df,tokenizer,textvar,maxlen):
         X=df[textvar]
@@ -98,32 +99,50 @@ class LSTM():
     
     def train_LSTM(self,X_train,y_train,X_val,y_val,vocab_size,units,dropout,
                    hiddenlayers,epochs,learning_rate):
-        model_reg=Sequential()
-        model_reg.add(layers.Embedding(input_dim=vocab_size,\
+        model=Sequential()
+        model.add(layers.Embedding(input_dim=vocab_size,\
                                    output_dim=100,\
                                    input_length=100))
         for i in range(hiddenlayers):
             if i+1 < hiddenlayers:
-                model_reg.add(layers.Bidirectional(layers.LSTM(units=units, 
+                model.add(layers.Bidirectional(layers.LSTM(units=units, 
                                                                dropout=dropout, 
                                                     return_sequences=True)))
             else:
-                model_reg.add(layers.Bidirectional(layers.LSTM(units=units, 
+                model.add(layers.Bidirectional(layers.LSTM(units=units, 
                                                                dropout=dropout)
                     ))        
-        model_reg.add(layers.Dense(1))
-        model_reg.compile(optimizer=Adam(learning_rate=learning_rate),\
+        model.add(layers.Dense(1))
+        model.compile(optimizer=Adam(learning_rate=learning_rate),\
                       loss='mse',\
                       metrics='mae')
-        model_reg.fit(X_train,\
+        model.fit(X_train,\
                   y_train,\
                   batch_size=256,\
                   epochs=epochs,\
                   validation_data=(X_val,y_val))
-        model_reg_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
-        print(model_reg_timestamp)
+        model_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
+        print(model_timestamp)
+        return model, model_timestamp
+        
+    def save_model(self,model,model_timestamp,basefile):
+        # Create folder for model
+        if not os.path.exists('{0}/{1}'.format(basefile,model_timestamp)):
+            os.makedirs('{0}/{1}'.format(basefile,model_timestamp))
+        
+        # Save model
+        model_reg.save('{0}/{1}/model_reg.h5'.format(basefile,model_timestamp))
+        # Save history
+        np.save('{0}/{1}/model_reg_history'.format(basefile,model_timestamp),
+                model.history.history)
+        
+        # Save tokenizer
+        with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_timestamp),
+                  'wb') as handle:
+            pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
     
-    def hp_loop(self,n_units,dropouts,n_hiddenlayers,n_epochs,learning_rates):
+    def hp_loop(self,n_units,dropouts,n_hiddenlayers,n_epochs,learning_rates,
+                basefile):
         for units in n_units:
             for dropout in dropouts:
                 for hiddenlayers in n_hiddenlayers:
@@ -137,4 +156,5 @@ class LSTM():
                             print('')
                             start = datetime.now()
                             self.train_LSTM(vocab_size)
+                            self.save_model(model,model_timestamp,basefile)
                             
