@@ -66,10 +66,10 @@ df_VADER_test2 = df_VADER[df_VADER['sentconf_cat'].isin(
 
 #%% Prepare train, validation, test and test2 datasets
 
-X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size = (
-        class_lstm.train_val_test_test2(df_VADER_train,df_VADER_test2,50,50,
+X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size,tokenizer 
+    = (class_lstm.train_val_test_test2(df_VADER_train,df_VADER_test2,50,50,
                              'content_lemma','sentiment',100)
-        )
+    )
 
 #%%
 
@@ -79,6 +79,8 @@ dropouts = [0,.1,.2]
 n_hiddenlayers = [1,2,3]
 n_epochs = [25,50,75]
 learning_rates = [.001,.01,.1]
+
+
 
 for units in n_units:
     for dropout in dropouts:
