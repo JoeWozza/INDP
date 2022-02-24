@@ -75,6 +75,7 @@ df_hp1 = pd.DataFrame(list(product(n_units,dropouts,n_hiddenlayers,n_epochs,
 df_scores_hp1 = class_lstm.hp_loop(df_VADER_train,df_hp1,basefile,500,
                                    'content_lemma','sentiment',100,
                                    df_VADER_test2,500)
+df_scores_hp1.to_csv('{0}/df_scores_hp1.csv'.format(basefile))
 
 #%% Run a few candidate models on bigger samples
 
@@ -90,8 +91,10 @@ df_hp2 = pd.DataFrame([[0.1,75,3,0.001,128],
 df_scores_hp2 = class_lstm.hp_loop(df_VADER_train,df_hp2,basefile,10000,
                                    'content_lemma','sentiment',100,
                                    df_VADER_test2,10000)
+df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(basefile))
+# All perform well, but the best on correlation, mae and mse is 
+# 2022-02-18_175759.443774: 0.2, 50.0, 3.0, 0.01, 128.0
 
-# All perform well, but the best on correlation, mae and mse is 2022-02-18_175759.443774
 
 
 
