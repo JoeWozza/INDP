@@ -46,13 +46,6 @@ df_VADER = pd.read_csv("INDP//Data//df_VADER_.csv")
 # Format tweet_id
 df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
 
-def get_dataset(row):
-    if "_" in row['variable']:
-        val = 'valid'
-    else:
-        val = 'train'
-    return val
-
 # Categorise sentiment (must be 0, 1 and 2 for to_categorical to work)
 #df_VADER['sentiment_cat'] = df_VADER['sentiment_cat']+1
 
@@ -64,13 +57,6 @@ df_VADER_train = df_VADER[df_VADER['sentconf_cat'].isin(
 df_VADER_test2 = df_VADER[df_VADER['sentconf_cat'].isin(
         ['Low','VeryLow'])].reset_index()
 
-#%% Prepare train, validation, test and test2 datasets
-
-X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,vocab_size,tokenizer 
-    = (class_lstm.train_val_test_test2(df_VADER_train,df_VADER_test2,50,50,
-                             'content_lemma','sentiment',100)
-    )
-
 #%%
 
 # Hyperparameter tuning on LSTM model
@@ -80,116 +66,10 @@ n_hiddenlayers = [1,2,3]
 n_epochs = [25,50,75]
 learning_rates = [.001,.01,.1]
 
-
-
-for units in n_units:
-    for dropout in dropouts:
-        for hiddenlayers in n_hiddenlayers:
-            for epochs in n_epochs:
-                for learning_rate in learning_rates:
-                    print(units)
-                    print(dropout)
-                    print(hiddenlayers)
-                    print(epochs)
-                    print(learning_rate)
-                    print('')
-                    
-                    start = datetime.now()
-                    
-                    model_reg=Sequential()
-                    model_reg.add(layers.Embedding(input_dim=vocab_size,\
-                                               output_dim=100,\
-                                               input_length=100))
-                    if hiddenlayers == 1:
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout)))
-                    if hiddenlayers == 2:
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout, return_sequences=True)))
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout)))
-                    if hiddenlayers == 3:
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout, return_sequences=True)))
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout, return_sequences=True)))
-                        model_reg.add(layers.Bidirectional(layers.LSTM(units=units, dropout=dropout)))
-                    model_reg.add(layers.Dense(1))
-                    model_reg.compile(optimizer=Adam(learning_rate=learning_rate),\
-                                  loss='mse',\
-                                  metrics='mae')
-                    model_reg.fit(X_train,\
-                              y_train_reg,\
-                              batch_size=256,\
-                              epochs=epochs,\
-                              #epochs=2,\
-                              validation_data=(X_val,y_val_reg))
-                    model_reg_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
-                    print(model_reg_timestamp)
-                    
-                    # Create folder for model
-                    if not os.path.exists('{0}/{1}'.format(basefile,model_reg_timestamp)):
-                        os.makedirs('{0}/{1}'.format(basefile,model_reg_timestamp))
-                    
-                    # Save model
-                    model_reg.save('{0}/{1}/model_reg.h5'.format(basefile,
-                                     model_reg_timestamp))
-                    # Save history
-                    np.save('{0}/{1}/model_reg_history'.format(basefile,model_reg_timestamp),
-                            model_reg.history.history)
-                    
-                    # Save tokenizer
-                    with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_reg_timestamp),
-                              'wb') as handle:
-                        pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-                    
-                    # Plot performance by number of epochs
-                    df_sns = pd.DataFrame(model_reg.history.history)
-                    df_sns['epoch'] = df_sns.index + 1
-                    df_sns_melt = pd.melt(df_sns, id_vars='epoch')
-                    
-                    df_sns_melt['dataset'] = df_sns_melt.apply(lambda row: get_dataset(row), axis=1)
-                    df_sns_melt['stat'] = df_sns_melt['variable'].str.split('_').str[-1]
-                    
-                    g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat',
-                                kind='line')
-                    g.set_axis_labels(x_var = 'Epoch', y_var = 'Value')
-                    g.set_titles(col_template = '{col_name}')
-                    for ax in g.axes.flat:
-                        ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
-                    g.tight_layout()
-                    g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_reg_timestamp))
-                    
-                    # Test on test dataset from high/very high confidence scores
-                    predict_test_reg = model_reg.predict(X_test)
-                    y_test_reg = y_test['sentiment']
-                    
-                    # Test on low/very low confidence tweets                
-                    predict_test2_reg = model_reg.predict(X_test2)
-                    y_test2_reg = y_test2['sentiment']
-                    
-                    end = datetime.now()
-                    print(str(end-start))
-                    
-                    score_dict_reg = {'model': model_reg_timestamp,
-                                      'units': units,
-                                      'dropout': dropout,
-                                      'hiddenlayers': hiddenlayers,
-                                      'epochs': epochs,
-                                      'learning_rate': learning_rate,
-                                      'time_taken': str(end-start),
-                                      'test_mse':mean_squared_error(y_test_reg,predict_test_reg),
-                                      'test_mae':median_absolute_error(y_test_reg,
-                                                                       predict_test_reg),
-                                      'test_corr':y_test.reset_index()['sentiment'].corr(
-                                              pd.Series(predict_test_reg[:,0])),                                                   
-                                      'test2_mse':mean_squared_error(y_test2_reg,
-                                                                     predict_test2_reg),
-                                      'test2_mae':median_absolute_error(y_test2_reg,
-                                                                        predict_test2_reg),
-                                      'test2_corr':y_test2.reset_index()['sentiment'].corr(
-                                              pd.Series(predict_test2_reg[:,0]))
-                                      }
-                    
-                    df_scores = df_scores.append(score_dict_reg, ignore_index=True)
-                    
-                    np.save('{0}/{1}/score_dict'.format(basefile,model_reg_timestamp),
-                            score_dict_reg)
+df_scores = class_lstm.hp_loop(df_VADER_train,n_units,dropouts,n_hiddenlayers,
+                               n_epochs,learning_rates,basefile,500,
+                               'content_lemma','sentiment',100,df_VADER_test2,
+                               500)
 
 df_scores.to_csv('{0}/df_scores_{1}.csv'.format(basefile,str(datetime.now()).replace(' ','_').replace(':','')))
 
