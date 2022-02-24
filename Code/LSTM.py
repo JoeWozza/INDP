@@ -78,7 +78,6 @@ class LSTM():
         return X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer                
     
     def score_prep(self,X,tokenizer,textvar,maxlen):
-        #X=df[textvar]
         X=self.data_cleaning(X)
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
