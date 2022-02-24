@@ -124,13 +124,21 @@ class LSTM():
                   'wb') as handle:
             pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
             
+    def get_dataset(self,row):
+        if "_" in row['variable']:
+            val = 'valid'
+        else:
+            val = 'train'
+        return val
+            
     def epoch_perf_plot(self,model,model_timestamp,basefile):
         # Plot performance by number of epochs
         df_sns = pd.DataFrame(model.history.history)
         df_sns['epoch'] = df_sns.index + 1
         df_sns_melt = pd.melt(df_sns, id_vars='epoch')
         
-        df_sns_melt['dataset'] = df_sns_melt.apply(lambda row: get_dataset(row), axis=1)
+        df_sns_melt['dataset'] = df_sns_melt.apply(lambda row: 
+            self.get_dataset(row), axis=1)
         df_sns_melt['stat'] = df_sns_melt['variable'].str.split('_').str[-1]
         
         g = sns.relplot(data=df_sns_melt, x='epoch', y='value', hue='dataset', col='stat',
