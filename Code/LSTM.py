@@ -54,9 +54,8 @@ class LSTM():
     def train_val_test_test2(self,df_train,df_test2,train_samp,test2_samp,
                              textvar,sentvar,maxlen):
         
-        # Take samples of training and 'test2' datasets
+        # Take samples of training dataset
         df_train_samp = df_train.sample(n=train_samp)
-        df_test2_samp = df_test2.sample(n=test2_samp)
         # Split into X and y variables
         X=df_train_samp[textvar]
         y=df_train_samp[sentvar]
@@ -68,32 +67,17 @@ class LSTM():
         
         # Fit and transform the data
         X_train=self.data_cleaning(X_train)
-        X_val=self.data_cleaning(X_val)
         tokenizer=Tokenizer()
         tokenizer.fit_on_texts(X_train)
         vocab_size=len(tokenizer.word_index)+1
         X_train=pad_sequences(tokenizer.texts_to_sequences(X_train), 
                               maxlen=maxlen)
-        X_val=pad_sequences(tokenizer.texts_to_sequences(X_val), 
-                            maxlen=maxlen)
         
-        # Transform the test data
-        X_test=self.data_cleaning(X_test)
-        X_test=pad_sequences(tokenizer.texts_to_sequences(X_test), 
-                             maxlen=maxlen)
-        
-        X_test2=df_test2_samp[textvar]
-        y_test2=df_test2_samp[sentvar]
-        X_test2=self.data_cleaning(X_test2)
-        X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), 
-                              maxlen=maxlen)
-                
-        return X_train,y_train,X_val,y_val,X_test,y_test,X_test2,y_test2,
-            vocab_size,tokenizer
+        return X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer                
     
     def score_prep(self,df,tokenizer,textvar,maxlen):
         X=df[textvar]
-        X=data_cleaning(X)
+        X=self.data_cleaning(X)
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
     
@@ -131,9 +115,9 @@ class LSTM():
             os.makedirs('{0}/{1}'.format(basefile,model_timestamp))
         
         # Save model
-        model_reg.save('{0}/{1}/model_reg.h5'.format(basefile,model_timestamp))
+        model.save('{0}/{1}/model.h5'.format(basefile,model_timestamp))
         # Save history
-        np.save('{0}/{1}/model_reg_history'.format(basefile,model_timestamp),
+        np.save('{0}/{1}/model_history'.format(basefile,model_timestamp),
                 model.history.history)
         
         # Save tokenizer
@@ -160,7 +144,7 @@ class LSTM():
         g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_timestamp))
     
     def hp_loop(self,n_units,dropouts,n_hiddenlayers,n_epochs,learning_rates,
-                basefile):
+                basefile,test2_samp):
         for units in n_units:
             for dropout in dropouts:
                 for hiddenlayers in n_hiddenlayers:
@@ -173,6 +157,9 @@ class LSTM():
                             print(learning_rate)
                             print('')
                             start = datetime.now()
+                            # Prepare validation data
+                            X_val=self.score_prep(X_val,tokenizer,textvar,
+                                                  maxlen)                            
                             # Train LSTM model
                             self.train_LSTM(vocab_size)
                             # Save LSTM model and related history and tokenizer
@@ -180,5 +167,16 @@ class LSTM():
                             # Plot performance by number of epochs
                             self.epoch_perf_plot(model_model_timestamp,
                                                  basefile)
+                            # Prepare test data
+                            X_test=self.score_prep(X_test,tokenizer,textvar,
+                                                   maxlen)
+                            # Prepare test2 data
+                            df_test2_samp = df_test2.sample(n=test2_samp)
+                            X_test2=self.score_prep(X_test2,tokenizer,textvar,
+                                                    maxlen)
+                            y_test2=df_test2_samp[sentvar]
+                            X_test2=self.data_cleaning(X_test2)
+                            X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), 
+                                                  maxlen=maxlen)
                             
                             
