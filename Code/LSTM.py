@@ -77,7 +77,7 @@ class LSTM():
         
         return X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer                
     
-    def score_prep(self,X,tokenizer,textvar,maxlen):
+    def score_prep(self,X,tokenizer,maxlen):
         X=self.data_cleaning(X)
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
@@ -156,8 +156,7 @@ class LSTM():
         # Prepare test2 data
         df_test2_samp = df_test2.sample(n=test2_samp)
         X_test2=df_test2_samp[textvar]
-        X_test2=self.score_prep(X_test2,tokenizer,textvar,
-                                maxlen)
+        X_test2=self.score_prep(X_test2,tokenizer,maxlen)
         y_test2=df_test2_samp[sentvar]
         return X_test2,y_test2
     
@@ -190,9 +189,9 @@ class LSTM():
                 self.train_val_test(df_train,train_samp,textvar,sentvar,maxlen)
                 )
         # Prepare validation data
-        X_val=self.score_prep(X_val,tokenizer,textvar,maxlen)
+        X_val=self.score_prep(X_val,tokenizer,maxlen)
         # Prepare test data
-        X_test=self.score_prep(X_test,tokenizer,textvar,maxlen)
+        X_test=self.score_prep(X_test,tokenizer,maxlen)
         df_scores=pd.DataFrame()
         
         for index,row in df_hp.iterrows():
