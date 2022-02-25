@@ -24,6 +24,8 @@ chdir(filepath)
 
 from INDP.Code import LSTM
 class_lstm = LSTM.LSTM()
+from INDP.Code import VADER
+class_v = VADER.VADER()
 
 df_LSTM_sent = pd.read_csv("INDP\Data\df_LSTM_sent.csv")
 # Categorise sentiment score
@@ -31,7 +33,98 @@ df_LSTM_sent['LSTM_sent_cat'] = df_LSTM_sent.apply(lambda row:
     class_lstm.cat_sentiment_str(row['LSTM_sent']), axis=1)
 df_LSTM_sent_unique = df_LSTM_sent.drop_duplicates(subset=['tweet_id'])
 
-#%%
+#%% Compare to VADER
+
+# Load packages
+import re
+import emoji
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import word_tokenize
+from nltk import pos_tag
+from nltk.corpus import wordnet
+nltk.download('stopwords')
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+analyzer = SentimentIntensityAnalyzer()
+
+# Define stopwords list
+stopwords_fin = class_v.fin_stopwords(stopwords.words('english'))
+# Sort out tweet_id field
+df_LSTM_sent_unique['tweet_id'] = (df_LSTM_sent_unique['tweet_id']
+    .astype('Int64').apply(str))
+# Clean, tokenize and lemmatise tweet content
+df_LSTM_sent_unique['content_lemma'] = (df_LSTM_sent_unique['tweet_text']
+    .apply(class_v.clean)
+    .apply(class_v.tokenize)
+    .apply(class_v.lemmatise, stopwords_list=stopwords_fin))
+# Calculate sentiment
+df_LSTM_sent_unique['VADER_sent'] = (df_LSTM_sent_unique['content_lemma']
+    .apply(class_v.VADERsentiment))
+# Calculate sentiment confidence
+df_LSTM_sent_unique['VADER_conf'] = (df_LSTM_sent_unique['content_lemma']
+    .apply(class_v.sentconf))
+# Categorise sentiment score
+df_LSTM_sent_unique['VADER_sent_cat'] = df_LSTM_sent_unique.apply(lambda row: 
+    class_v.cat_sentiment(row['VADER_sent']), axis=1)
+# Categorise sentiment confidence score
+mean_cs,std_cs = class_v.cat_sentconf_stats(df_LSTM_sent_unique['VADER_conf'])
+df_LSTM_sent_unique['VADER_conf_cat'] = df_LSTM_sent_unique.apply(lambda row:
+    class_v.cat_sentconf(row['VADER_conf'],mean_cs,std_cs), axis=1)
+
+sentconf_cat_order = ['VeryHigh','High','Low','VeryLow','Zero']
+
+# Compare to VADER scores
+
+## Compare distributions
+fig, ax = plt.subplots(figsize = (12,6))
+fig = sns.violinplot(data=df_LSTM_sent_unique[['LSTM_sent','VADER_sent']],
+                     cut=0,inner='quartile',ax=ax)
+ax.set_xticklabels(['LSTM','VADER'])
+plt.suptitle('Comparison of LSTM and VADER distributions')
+plt.tight_layout()
+plt.savefig("INDP/Images/dists_LSTM_VADER.png")
+
+## Compare LSTM scores/classes to VADER ones
+fig, ax = plt.subplots(figsize = (12,6))
+fig = sns.scatterplot(data=df_LSTM_sent_unique,x='LSTM_sent',y='VADER_sent', 
+                      hue='VADER_conf_cat',hue_order=sentconf_cat_order, 
+                      ax=ax)
+ax.set(xlabel = 'LSTM sentiment score',ylabel = 'VADER sentiment score')
+plt.suptitle('Comparison of LSTM predictions and VADER scores')
+plt.tight_layout()
+plt.savefig("INDP/Images/LSTM_v_VADER.png")
+
+### What about by sentconf_cat
+g = sns.relplot(data=df_LSTM_sent_unique, x='LSTM_sent', y='VADER_sent', 
+                col='VADER_conf_cat', col_order=sentconf_cat_order)
+g.set_axis_labels(x_var = 'LSTM sentiment score', 
+                  y_var = 'VADER sentiment score')
+g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
+g.fig.suptitle('Comparison of LSTM and VADER sentiment scores, by VADER '
+               'confidence category')
+g.tight_layout()
+g.savefig("INDP/Images/LSTM_reg_v_VADER_sentconf_cat.png")
+
+df_LSTM_sent_unique.groupby('VADER_conf_cat')[['LSTM_sent','VADER_sent']].corr()
+
+## Plot absolute error against sentconf
+df_LSTM_sent_unique['absolute_error'] = abs(df_LSTM_sent_unique['LSTM_sent']-
+                   df_LSTM_sent_unique['VADER_sent'])
+
+fig, ax = plt.subplots(figsize = (12,6))
+fig = sns.scatterplot(data=df_LSTM_sent_unique, x='absolute_error', 
+                      y='VADER_conf')
+ax.set(xlabel = 'Absolute difference between LSTM and VADER sentiment scores', 
+       ylabel = 'Confidence in VADER score',
+       title = 'Comparison of absolute error and VADER confidence')
+plt.tight_layout()
+plt.savefig("INDP/Images/ae_v_sentconf.png")
+
+#%% Investigate sentiment scores, overall, by search term and by UTLA
 
 # Plot distribution of sentiment scores
 fig, ax = plt.subplots(figsize = (12,6))
@@ -137,3 +230,12 @@ for utla in utlas:
         fig.suptitle(utla, y=0.65)
         plt.tight_layout()
     fig.savefig('INDP/Images/LSTM_sent_wordclouds_sentcat_{0}.png'.format(utla))
+
+
+
+
+
+
+
+
+
