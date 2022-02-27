@@ -9,7 +9,7 @@ import pandas as pd
 ##
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-#from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 #from tensorflow.keras.models import load_model
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
@@ -19,7 +19,7 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
-from sklearn.metrics import mean_squared_error, median_absolute_error
+from sklearn.metrics import mean_squared_error, median_absolute_error, roc_auc_score
 #import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as tkr
@@ -27,6 +27,9 @@ from datetime import datetime
 import pickle
 import os
 import numpy as np
+
+from INDP.Code import VADER
+class_v = VADER.VADER()
 
 class LSTM():
     
@@ -160,6 +163,14 @@ class LSTM():
         y_test2=df_test2_samp[sentvar]
         return X_test2,y_test2
     
+    def auc_score(self,y_true,y_score):
+        y_true = to_categorical(y_true.apply(class_v.cat_sentiment),
+                                num_classes=3)
+        y_score = to_categorical(pd.Series(y_score[:,0]).apply(
+                class_v.cat_sentiment),num_classes=3)
+        score = roc_auc_score(y_true,y_score)
+        return score
+    
     def score_dict(self,units,dropout,hiddenlayers,epochs,learning_rate,
                    start,end,y_test,predict_test,sentvar,y_test2,predict_test2,
                    basefile,model_timestamp):
@@ -172,10 +183,12 @@ class LSTM():
                       'time_taken': str(end-start),
                       'test_mse':mean_squared_error(y_test,predict_test),
                       'test_mae':median_absolute_error(y_test,predict_test),
+                      'test_auc':self.auc_score(y_test,predict_test),
                       'test_corr':y_test.reset_index()[sentvar].corr(
                               pd.Series(predict_test[:,0])),
                       'test2_mse':mean_squared_error(y_test2,predict_test2),
                       'test2_mae':median_absolute_error(y_test2,predict_test2),
+                      'test2_auc':self.auc_score(y_test2,predict_test2),
                       'test2_corr':y_test2.reset_index()[sentvar].corr(
                               pd.Series(predict_test2[:,0]))
                           }
