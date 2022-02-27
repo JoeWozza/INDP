@@ -238,5 +238,16 @@ class LSTM():
             
             df_scores = df_scores.append(score_dict,ignore_index=True)
         return df_scores
+    
+    def cat_sentiment_str(self,var):
+        # Positive
+        if var >= 0.05:
+            return 'Positive'
+        # Negative
+        elif var <= -0.05:
+            return 'Negative'
+        # Neutral
+        else:
+            return 'Neutral'
                             
                             
