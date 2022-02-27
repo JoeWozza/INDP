@@ -81,6 +81,30 @@ df_scores_hp1 = class_lstm.hp_loop(df_VADER_train,df_hp1,basefile,500,
                                    df_VADER_test2,500)
 df_scores_hp1.to_csv('{0}/df_scores_hp1.csv'.format(basefile))
 
+# Look into average performance by each value for each hyperparameter
+df_scores_hp1_melt = df_scores_hp1.melt(id_vars=['model','test_mae','test_mse',
+                                                 'test_corr'],
+                                        value_vars=['units','dropout',
+                                                    'hiddenlayers','epochs',
+                                                    'learning_rate'],
+                                        value_name='hp_value',
+                                        var_name='hp_name')
+df_scores_hp1_melt['hp_value'] = df_scores_hp1_melt['hp_value'].astype(str)
+
+df_scores_hp1_melt2 = df_scores_hp1_melt.melt(id_vars=['model','hp_name',
+                                                       'hp_value'],
+                                        value_vars=['test_mae','test_mse',
+                                                    'test_corr'],
+                                        var_name='metric')
+
+# Plot distribution of metrics by hyperparameters
+g = sns.FacetGrid(df_scores_hp1_melt2,row='hp_name',col='metric',sharex=False)
+g.map(sns.boxplot, 'hp_value', 'value', color='#007C91', showfliers=False)
+g.set_axis_labels(x_var = 'Hyperparameter value', y_var = 'Metric value')
+g.set_titles(col_template = '{col_name}', row_template = '{row_name}')
+g.tight_layout()
+g.savefig("INDP//Images//hp1_testmetrics.png")
+
 #%% Run a few candidate models on bigger samples
 
 # Chose top 5 based on MSE
