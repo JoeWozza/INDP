@@ -231,7 +231,54 @@ for utla in utlas:
         plt.tight_layout()
     fig.savefig('INDP/Images/LSTM_sent_wordclouds_sentcat_{0}.png'.format(utla))
 
+#%% Compare sentiment scores over time
 
+# Convert tweet_date to datetime
+df_LSTM_sent_unique['tweet_date'] = pd.to_datetime(df_LSTM_sent_unique['tweet_date'])
+# Split into initial data (Jan only - used for training) and recent data 
+# (15 Feb onwards)
+def date_split(var):
+    if var <= pd.to_datetime('2022-01-31'):
+        return 'Initial'
+    elif var >= pd.to_datetime('2022-02-15'):
+        return 'Recent'
+
+df_LSTM_sent_unique['date_split'] = df_LSTM_sent_unique['tweet_date'].apply(date_split)
+df_LSTM_sent_unique.groupby('date_split')['LSTM_sent'].mean()
+df_LSTM_sent_unique.groupby(['date_split','LSTM_sent_cat']).size()/df_LSTM_sent_unique.groupby('date_split').size()
+
+# Calculate rolling 7-day sentiment score
+## Overall
+df_7day = (df_LSTM_sent_unique.groupby('tweet_date')['LSTM_sent']
+    .agg(['sum','count']).reset_index())
+
+df_7day_rolling = df_7day.rolling(window=7).sum()
+df_7day_rolling['mean'] = df_7day_rolling['sum']/df_7day_rolling['count']
+
+df_7day_rolling = df_7day[['tweet_date']].join(df_7day_rolling)
+
+fig, ax = plt.subplots(figsize = (12,6))
+fig = sns.lineplot(data=df_7day_rolling, x='tweet_date', y='mean', ax=ax, 
+                   color='#007C91')
+ax.set(xlabel = 'Tweet date', ylabel = '7-day rolling average sentiment score')
+plt.tight_layout()
+plt.savefig("INDP//Images//LSTM_sentiment.png")
+
+## By search term
+
+
+## By UTLA
+
+
+
+
+# Plot overall 7-day average
+
+
+# Plot 7-day average by search term
+
+
+# Plot 7-day average by UTLA
 
 
 
