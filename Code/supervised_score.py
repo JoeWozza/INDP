@@ -83,7 +83,7 @@ X = class_lstm.score_prep(X_text,tokenizer,100)
 df_tweets_deduped['LSTM_sent'] = model.predict(X)
 df_tweets_deduped['tweet_text_clean'] = X_text
 
-
+df_tweets_deduped.to_csv("INDP\Data\df_LSTM_sent.csv")
 
 
 
