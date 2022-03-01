@@ -37,14 +37,24 @@ filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
+# Create folder in which to save visualisations
+models_folder = 'INDP/Models'
+hp1_folder = 'INDP/Models/hp1'
+hp2_folder = 'INDP/Models/hp2'
+
+if not os.path.exists(models_folder):
+    os.makedirs(models_folder)
+if not os.path.exists(hp1_folder):
+    os.makedirs(hp1_folder)
+if not os.path.exists(hp2_folder):
+    os.makedirs(hp2_folder)
+
 from INDP.Code import LSTM
 class_lstm = LSTM.LSTM()
 from INDP.Code import VADER
 class_v = VADER.VADER()
 
-basefile = 'INDP/Models/model_reg'
-
-df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
+df_VADER = pd.read_csv("INDP/Data/VADER/df_VADER.csv")
 
 df_VADER['tweet_text_clean'] = df_VADER['tweet_text'].apply(class_v.clean)
 
@@ -81,10 +91,10 @@ df_hp1 = pd.DataFrame(list(product(n_units,dropouts,n_hiddenlayers,n_epochs,
                                    learning_rates)),
         columns=['units','dropout','hiddenlayers','epochs','learning_rate'])
 
-df_scores_hp1 = class_lstm.hp_loop(df_VADER_train,df_hp1,basefile,500,
+df_scores_hp1 = class_lstm.hp_loop(df_VADER_train,df_hp1,hp1_folder,500,
                                    'tweet_text_clean','sentiment',100,
                                    df_VADER_test2,500)
-df_scores_hp1.to_csv('{0}/df_scores_hp1.csv'.format(basefile))
+df_scores_hp1.to_csv('{0}/df_scores_hp1.csv'.format(hp1_folder))
 
 # Look into average performance by each value for each hyperparameter
 df_scores_hp1_melt = df_scores_hp1.melt(id_vars=['model','test_mae','test_mse',
@@ -108,7 +118,7 @@ g.map(sns.boxplot, 'hp_value', 'value', color='#007C91', showfliers=False)
 g.set_axis_labels(x_var = 'Hyperparameter value', y_var = 'Metric value')
 g.set_titles(col_template = '{col_name}', row_template = '{row_name}')
 g.tight_layout()
-g.savefig("INDP//Images//hp1_testmetrics.png")
+g.savefig("{0}/hp1_testmetrics.png".format(hp1_folder))
 
 #%% Run a few candidate models on bigger samples
 
@@ -121,10 +131,10 @@ df_hp2 = pd.DataFrame([[0.1,75,3,0.001,128],
                         columns=['dropout','epochs','hiddenlayers',
                                  'learning_rate','units'])
 
-df_scores_hp2 = class_lstm.hp_loop(df_VADER_train,df_hp2,basefile,10000,
+df_scores_hp2 = class_lstm.hp_loop(df_VADER_train,df_hp2,hp2_folder,10000,
                                    'tweet_text_clean','sentiment',100,
                                    df_VADER_test2,10000)
-df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(basefile))
+df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(hp2_folder))
 # All perform well, but the best on correlation, mae and mse is 
 # 2022-02-18_175759.443774: 0.2, 50.0, 3.0, 0.01, 128.0
 
@@ -133,33 +143,21 @@ df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(basefile))
 
 ## Get results from all hyperparameter combinations into dataframe
 # Define common string in folder name
-folderstring1 = '2022-02-09_'
-folderstring2 = '2022-02-10_'
-folderstring3 = '2022-02-11_'
-folderstring4 = '2022-02-12_'
-folderstring5 = '2022-02-13_'
-folderstring6 = '2022-02-14_'
-folderstring7 = '2022-02-16_'
-folderstring8 = '2022-02-17_'
-folderstring9 = '2022-02-18_'
+folderstring = '2022-'
 # Get list of model timestamps
-all_folders = listdir(filepath + "\INDP\Models\model_reg")
-folders = [s for s in all_folders if (folderstring1 in s) or 
-           (folderstring2 in s) or (folderstring3 in s) or (folderstring4 in s)
-            or (folderstring5 in s) or (folderstring6 in s) or 
-            (folderstring7 in s) or (folderstring8 in s) or 
-            (folderstring9 in s)]
+all_folders = listdir(hp1_folder)
+folders = [s for s in all_folders if folderstring in s]
 
 # Remove these three (from hp2): 2022-02-18_213521.783721, 2022-02-18_175759.443774, 2022-02-18_135831.330432
-folders.remove('2022-02-18_213521.783721')
-folders.remove('2022-02-18_175759.443774')
-folders.remove('2022-02-18_135831.330432')
+#folders.remove('2022-02-18_213521.783721')
+#folders.remove('2022-02-18_175759.443774')
+#folders.remove('2022-02-18_135831.330432')
 
 # Loop through folders and append results to dataframe
 df_scores = pd.DataFrame()
 for f in folders:
     print(f)
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(basefile,f),allow_pickle='TRUE').item()
+    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp1_folder,f),allow_pickle='TRUE').item()
     score_dict['model'] = f
     df_scores = df_scores.append(score_dict, ignore_index=True)
 
@@ -181,7 +179,7 @@ for index,row in df_scores.iterrows():
                       'test2_mae': row['test2_mae'],
                       'test2_corr': row['test2_corr']
                           }
-    np.save('{0}/{1}/score_dict'.format(basefile,row['model']),score_dict)
+    np.save('{0}/{1}/score_dict'.format(hp1_folder,row['model']),score_dict)
 
 # Add AUC to existing score_dicts
 df_train = df_VADER_train.sample(n=500)
@@ -203,10 +201,10 @@ for index,row in df_scores.iterrows():
     print(model_timestamp)
     
     # Load tokenizer and model
-    with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_timestamp), 
+    with open('{0}/{1}/tokenizer.pickle'.format(hp1_folder,model_timestamp), 
               'rb') as handle:
         tokenizer = pickle.load(handle)
-    model = load_model('{0}/{1}/model_reg.h5'.format(basefile,model_timestamp))
+    model = load_model('{0}/{1}/model_reg.h5'.format(hp1_folder,model_timestamp))
     # Apply tokenizer
     vocab_size=len(tokenizer.word_index)+1
     X_test_=pad_sequences(tokenizer.texts_to_sequences(X_test),maxlen=100)
@@ -217,7 +215,7 @@ for index,row in df_scores.iterrows():
     # Score model on 'test2' dataset                
     predict_test2 = model.predict(X_test2_)
     
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(basefile,model_timestamp),allow_pickle='TRUE').item()
+    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp1_folder,model_timestamp),allow_pickle='TRUE').item()
     
     score_dict = {'model': score_dict['model'],
                   'units': score_dict['units'],
@@ -235,17 +233,17 @@ for index,row in df_scores.iterrows():
                   'test2_auc':class_lstm.auc_score(y_test2,predict_test2),
                   'test2_corr': score_dict['test2_corr']
                           }
-    np.save('{0}/{1}/score_dict_'.format(basefile,model_timestamp),
+    np.save('{0}/{1}/score_dict_'.format(hp1_folder,model_timestamp),
             score_dict)
 
 2022-02-11_080751.667393
 
-score_dict = np.load('{0}/2022-02-09_164246.262937/score_dict.npy'.format(basefile),allow_pickle='TRUE').item()
+score_dict = np.load('{0}/2022-02-09_164246.262937/score_dict.npy'.format(hp1_folder),allow_pickle='TRUE').item()
 
 df_scores_ = pd.DataFrame()
 for f in folders:
     print(f)
-    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(basefile,f),allow_pickle='TRUE').item()
+    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(hp1_folder,f),allow_pickle='TRUE').item()
     score_dict['model'] = f
     df_scores_ = df_scores_.append(score_dict, ignore_index=True)
 
@@ -264,10 +262,10 @@ for index,row in df_scores_hp2.iterrows():
     print(model_timestamp)
     
     # Load tokenizer and model
-    with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_timestamp), 
+    with open('{0}/{1}/tokenizer.pickle'.format(hp2_folder,model_timestamp), 
               'rb') as handle:
         tokenizer = pickle.load(handle)
-    model = load_model('{0}/{1}/model_reg.h5'.format(basefile,model_timestamp))
+    model = load_model('{0}/{1}/model_reg.h5'.format(hp2_folder,model_timestamp))
     # Apply tokenizer
     vocab_size=len(tokenizer.word_index)+1
     X_test_=pad_sequences(tokenizer.texts_to_sequences(X_test),maxlen=100)
@@ -278,7 +276,7 @@ for index,row in df_scores_hp2.iterrows():
     # Score model on 'test2' dataset                
     predict_test2 = model.predict(X_test2_)
     
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(basefile,model_timestamp),allow_pickle='TRUE').item()
+    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp2_folder,model_timestamp),allow_pickle='TRUE').item()
     
     score_dict = {'model': score_dict['model'],
                   'units': score_dict['units'],
@@ -296,13 +294,13 @@ for index,row in df_scores_hp2.iterrows():
                   'test2_auc':class_lstm.auc_score(y_test2,predict_test2),
                   'test2_corr': score_dict['test2_corr']
                           }
-    np.save('{0}/{1}/score_dict_'.format(basefile,model_timestamp),
+    np.save('{0}/{1}/score_dict_'.format(hp2_folder,model_timestamp),
             score_dict)
 
 df_scores_hp2_ = pd.DataFrame()
 for index,row in df_scores_hp2.iterrows():
     f = row['model']
-    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(basefile,f),allow_pickle='TRUE').item()
+    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(hp2_folder,f),allow_pickle='TRUE').item()
     score_dict['model'] = f
     df_scores_hp2_ = df_scores_hp2_.append(score_dict, ignore_index=True)
 
