@@ -35,7 +35,17 @@ filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
-df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
+# Create model folder
+if not os.path.exists('INDP/Models'):
+    os.makedirs('INDP/Models')
+if not os.path.exists('INDP/Models/Initial_models'):
+    os.makedirs('INDP/Models/Initial_models')
+if not os.path.exists('INDP/Models/Initial_models/model_reg'):
+    os.makedirs('INDP/Models/Initial_models/model_reg')
+if not os.path.exists('INDP/Models/Initial_models/model_multi'):
+    os.makedirs('INDP/Models/Initial_models/model_multi')
+
+df_VADER = pd.read_csv("INDP/Data/VADER/df_VADER.csv")
 
 # Format tweet_id
 df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
