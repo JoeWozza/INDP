@@ -27,7 +27,16 @@ class_lstm = LSTM.LSTM()
 from INDP.Code import VADER
 class_v = VADER.VADER()
 
-df_LSTM_sent = pd.read_csv("INDP\Data\df_LSTM_sent.csv")
+# Create folders
+images_folder = 'INDP/Images'
+finalmodel_folder = 'INDP/Images/Final_model'
+
+if not os.path.exists(images_folder):
+    os.makedirs(images_folder)
+if not os.path.exists(finalmodel_folder):
+    os.makedirs(finalmodel_folder)
+
+df_LSTM_sent = pd.read_csv("INDP/Data/LSTM/df_LSTM_sent.csv")
 # Categorise sentiment score
 df_LSTM_sent['LSTM_sent_cat'] = df_LSTM_sent.apply(lambda row: 
     class_lstm.cat_sentiment_str(row['LSTM_sent']), axis=1)
@@ -86,7 +95,7 @@ fig = sns.violinplot(data=df_LSTM_sent_unique[['LSTM_sent','VADER_sent']],
 ax.set_xticklabels(['LSTM','VADER'])
 plt.suptitle('Comparison of LSTM and VADER distributions')
 plt.tight_layout()
-plt.savefig("INDP/Images/dists_LSTM_VADER.png")
+plt.savefig("{0}/dists_LSTM_VADER.png".format(finalmodel_folder))
 
 ## Compare LSTM scores/classes to VADER ones
 fig, ax = plt.subplots(figsize = (12,6))
@@ -96,7 +105,7 @@ fig = sns.scatterplot(data=df_LSTM_sent_unique,x='LSTM_sent',y='VADER_sent',
 ax.set(xlabel = 'LSTM sentiment score',ylabel = 'VADER sentiment score')
 plt.suptitle('Comparison of LSTM predictions and VADER scores')
 plt.tight_layout()
-plt.savefig("INDP/Images/LSTM_v_VADER.png")
+plt.savefig("{0}/LSTM_v_VADER.png".format(finalmodel_folder))
 
 ### What about by sentconf_cat
 g = sns.relplot(data=df_LSTM_sent_unique, x='LSTM_sent', y='VADER_sent', 
@@ -107,7 +116,7 @@ g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
 g.fig.suptitle('Comparison of LSTM and VADER sentiment scores, by VADER '
                'confidence category')
 g.tight_layout()
-g.savefig("INDP/Images/LSTM_reg_v_VADER_sentconf_cat.png")
+g.savefig("{0}/LSTM_reg_v_VADER_sentconf_cat.png".format(finalmodel_folder))
 
 df_LSTM_sent_unique.groupby('VADER_conf_cat')[['LSTM_sent','VADER_sent']].corr()
 
@@ -122,7 +131,7 @@ ax.set(xlabel = 'Absolute difference between LSTM and VADER sentiment scores',
        ylabel = 'Confidence in VADER score',
        title = 'Comparison of absolute error and VADER confidence')
 plt.tight_layout()
-plt.savefig("INDP/Images/ae_v_sentconf.png")
+plt.savefig("{0}/ae_v_sentconf.png".format(finalmodel_folder))
 
 #%% Investigate sentiment scores, overall, by search term and by UTLA
 
@@ -133,7 +142,7 @@ fig = sns.distplot(df_LSTM_sent_unique['LSTM_sent'], ax=ax, color='#007C91',
                    kde_kws={'clip': (-1,1)})                
 ax.set(xlabel = 'LSTM sentiment score')
 plt.tight_layout()
-plt.savefig("INDP//Images//LSTM_sentiment.png")
+plt.savefig("{0}/LSTM_sentiment.png".format(finalmodel_folder))
 
 # Plot distribution of sentiment scores by search term
 search_terms = (df_LSTM_sent_unique.drop_duplicates(subset=['search_term'])
@@ -145,14 +154,14 @@ g.map(sns.histplot, 'LSTM_sent', color='#007C91', kde=True,
 g.set_axis_labels(x_var = 'LSTM sentiment score', y_var = 'Density')
 g.set_titles(col_template = '{col_name}')
 g.tight_layout()
-g.savefig("INDP//Images//LSTM_sentiment_search_term_hist.png")
+g.savefig("{0}/LSTM_sentiment_search_term_hist.png".format(finalmodel_folder))
 
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.boxplot(data=df_LSTM_sent_unique, x='search_term', y='LSTM_sent', 
                   color='#007C91', order = search_terms)
 ax.set_xticklabels(ax.get_xticklabels(), rotation=30)
 plt.tight_layout()
-plt.savefig("INDP//Images//LSTM_sentiment_search_term_box.png")
+plt.savefig("{0}/LSTM_sentiment_search_term_box.png".format(finalmodel_folder))
 
 # Plot distribution of sentiment scores by UTLA
 utlas = (df_LSTM_sent.drop_duplicates(subset=['area'])
@@ -164,14 +173,14 @@ g.map(sns.histplot, 'LSTM_sent', color='#007C91', kde=True,
 g.set_axis_labels(x_var = 'LSTM sentiment score', y_var = 'Density')
 g.set_titles(col_template = '{col_name}')
 g.tight_layout()
-g.savefig("INDP//Images//LSTM_sentiment_UTLA_hist.png")
+g.savefig("{0}/LSTM_sentiment_UTLA_hist.png".format(finalmodel_folder))
 
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.boxplot(data=df_LSTM_sent, x='area', y='LSTM_sent', 
                   color='#007C91', order = utlas)
 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
 plt.tight_layout()
-plt.savefig("INDP//Images//LSTM_sentiment_UTLA_box.png")
+plt.savefig("{0}/LSTM_sentiment_UTLA_box.png".format(finalmodel_folder))
 
 #%% Word clouds
 # Wordcloud with stop words excluded
@@ -194,7 +203,7 @@ for i,cat in enumerate(['Positive','Neutral','Negative']):
     ax[i].imshow(wordcloud_excstopwords)
     ax[i].axis("off")
     ax[i].set(title='LSTM sentiment: {0}'.format(cat))
-fig.savefig('INDP/Images/LSTM_sent_wordclouds_sentcat.png')
+fig.savefig('{0}/LSTM_sent_wordclouds_sentcat.png'.format(finalmodel_folder))
 
 # By UTLA
 fig, ax = plt.subplots(6,4, figsize = (24,12))
@@ -210,7 +219,7 @@ for utla,ax_i in zip(utlas,ax.flatten()):
     ax_i.imshow(wordcloud_excstopwords)
     ax_i.axis("off")
     ax_i.set(title='LSTM sentiment: {0}'.format(utla))
-fig.savefig('INDP/Images/LSTM_sent_wordclouds_utla.png')
+fig.savefig('{0}/LSTM_sent_wordclouds_utla.png'.format(finalmodel_folder))
 
 # By UTLA and sentiment category
 for utla in utlas:
@@ -229,7 +238,8 @@ for utla in utlas:
         ax[i].set(title='LSTM sentiment: {0}'.format(cat))
         fig.suptitle(utla, y=0.65)
         plt.tight_layout()
-    fig.savefig('INDP/Images/LSTM_sent_wordclouds_sentcat_{0}.png'.format(utla))
+    fig.savefig('{0}/LSTM_sent_wordclouds_sentcat_{1}.png'.format(
+            finalmodel_folder,utla))
 
 #%% Compare sentiment scores over time
 
@@ -262,7 +272,7 @@ fig = sns.lineplot(data=df_7day_rolling, x='tweet_date', y='mean', ax=ax,
                    color='#007C91')
 ax.set(xlabel = 'Tweet date', ylabel = '7-day rolling average sentiment score')
 plt.tight_layout()
-plt.savefig("INDP//Images//LSTM_sentiment.png")
+plt.savefig("{0}/LSTM_sentiment_roll7.png".format(finalmodel_folder))
 
 ## By search term
 
