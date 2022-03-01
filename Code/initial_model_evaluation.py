@@ -26,16 +26,26 @@ import shap
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 
 #%% Read in data
+
 # Set file path
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
-basefile = 'INDP/Models'
+basefile = 'INDP/Models/Initial_models'
 model_multi_timestamp = '2022-02-05_205022.742078'
-model_reg_timestamp = '2022-02-18_175759.443774'
+model_reg_timestamp = '2022-02-06_014131.806875'
 
-df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
+df_VADER = pd.read_csv("INDP/Data/VADER/df_VADER.csv")
+
+# Create folder in which to save visualisations
+images_folder = 'INDP/Images'.format(filepath)
+audit_folder = 'INDP/Images/Initial_model_audit'.format(filepath)
+
+if not os.path.exists(images_folder):
+    os.makedirs(images_folder)
+if not os.path.exists(audit_folder):
+    os.makedirs(audit_folder)
 
 #%% Pre-process data
 # Format tweet_id
@@ -123,7 +133,7 @@ thr = mcs + 0.5 * std
 df_VADER['sentconf_cat'] = df_VADER.apply(lambda row: cat_setconf(row), axis=1)
 
 X=df_VADER[df_VADER.content_lemma.notna()].reset_index()['content_lemma']
-X_multi=data_cleaning(X.head(1000))
+X_multi=data_cleaning(X)
 X_multi=pad_sequences(tokenizer_multi.texts_to_sequences(X_multi), maxlen=100)
 X_reg=data_cleaning(X)
 X_reg=pad_sequences(tokenizer_reg.texts_to_sequences(X_reg), maxlen=100)
@@ -159,8 +169,8 @@ ax.set(xlabel = 'LSTM regression score ({0})'.format(model_reg_timestamp),
        ylabel = 'LSTM class ({0})'.format(model_multi_timestamp),
        title = 'Comparison of regression and classification LSTM models')
 plt.tight_layout()
-plt.savefig("INDP/Models/LSTM_reg_v_multi_{0}_{1}.png".format(
-        model_reg_timestamp,model_multi_timestamp))
+plt.savefig("{0}/LSTM_reg_v_multi_{1}_{2}.png".format(audit_folder,
+        model_reg_timestamp,model_multi_timestamp,))
 
 ## Faceted by VADER confidence score
 g = sns.relplot(data=df_output, x='LSTM_reg', y='LSTM_multi', 
@@ -171,8 +181,8 @@ g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
 g.fig.suptitle('Comparison of regression and classification LSTM models,'
                ' by VADER confidence category')
 g.tight_layout()
-g.savefig("INDP/Models/LSTM_reg_v_multi_{0}_{1}_sentconf_cat.png".format(
-        model_reg_timestamp,model_multi_timestamp))
+g.savefig("{0}/LSTM_reg_v_multi_{1}_{2}_sentconf_cat.png".format(
+        audit_folder,model_reg_timestamp,model_multi_timestamp))
 
 # Compare to VADER scores
 
@@ -186,7 +196,7 @@ fig = sns.violinplot(data=df_output[['LSTM_multi','sentiment_cat']],cut=0,
 ax[1].set_xticklabels(['LSTM','VADER'])
 plt.suptitle('Comparison of LSTM and VADER distributions')
 plt.tight_layout()
-plt.savefig("INDP/Models/dists_LSTM_VADER_{0}_{1}.png".format(
+plt.savefig("{0}/dists_LSTM_VADER_{1}_{2}.png".format(audit_folder,
         model_reg_timestamp,model_multi_timestamp))
 
 ## Compare LSTM scores/classes to VADER ones
@@ -207,7 +217,7 @@ plt.legend(bbox_to_anchor=(1.05,1),loc='upper left',borderaxespad=0,
            title='VADER sentiment \nconfidence score')
 plt.suptitle('Comparison of LSTM predictions and VADER scores')
 plt.tight_layout()
-plt.savefig("INDP/Models/LSTM_v_VADER_{0}_{1}.png".format(
+plt.savefig("{0}/LSTM_v_VADER_{1}_{2}.png".format(audit_folder,
         model_reg_timestamp,model_multi_timestamp))
 
 ### What about by sentconf_cat
@@ -220,8 +230,8 @@ g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
 g.fig.suptitle('Comparison of regression LSTM score and VADER score, by '
                'VADER confidence category')
 g.tight_layout()
-g.savefig("INDP/Models/LSTM_reg_v_VADER_{0}_sentconf_cat.png".format(
-        model_reg_timestamp,model_multi_timestamp))
+g.savefig("{0}/LSTM_reg_v_VADER_{1}_sentconf_cat.png".format(
+        audit_folder,model_reg_timestamp))
 
 #### Multiclass
 g = sns.relplot(data=df_output, x='LSTM_multi', y='sentiment', 
@@ -232,8 +242,8 @@ g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
 g.fig.suptitle('Comparison of multiclass LSTM class and VADER score, by '
                'VADER confidence category')
 g.tight_layout()
-g.savefig("INDP/Models/LSTM_multi_v_VADER_{0}_sentconf_cat.png".format(
-        model_multi_timestamp))
+g.savefig("{0}/LSTM_multi_v_VADER_{1}_sentconf_cat.png".format(
+        audit_folder,model_multi_timestamp))
 
 ## Plot absolute error against sentconf
 df_output['absolute_error'] = abs(df_output['LSTM_reg']-df_output['sentiment'])
@@ -244,7 +254,7 @@ ax.set(xlabel = 'Absolute difference between regression LSTM score and VADER'
            'score ({0})'.format(model_reg_timestamp), 
        ylabel = 'Confidence in VADER score',
        title = 'Comparison of absolute error and VADER confidence')
-plt.savefig("INDP/Models/ae_v_sentconf_{0}.png".format(
+plt.savefig("{0}/ae_v_sentconf_{1}.png".format(audit_folder,
         model_reg_timestamp))
 
 ## Word clouds by sentiment_cat
@@ -283,8 +293,8 @@ for i,cat in enumerate(['Positive','Neutral','Negative']):
     ax_multi[i].axis("off")
     ax_multi[i].set(title='LSTM classification: {0}'.format(cat))
     
-fig_multi.savefig('INDP/Models/LSTM_multi_wordcloud_excstopwords_{0}_{1}.png'.format(cat,model_multi_timestamp))
-fig_reg.savefig('INDP/Models/LSTM_reg_wordcloud_excstopwords_{0}_{1}.png'.format(cat,model_reg_timestamp))
+fig_multi.savefig('{0}/LSTM_multi_wordcloud_excstopwords_{1}_{2}.png'.format(audit_folder,cat,model_multi_timestamp))
+fig_reg.savefig('{0}/LSTM_reg_wordcloud_excstopwords_{1}_{2}.png'.format(audit_folder,cat,model_reg_timestamp))
 
 
 #%%
