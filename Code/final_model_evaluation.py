@@ -14,6 +14,7 @@ from datetime import datetime
 import numpy as np
 import os
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
+from itertools import product
 
 from os import chdir, listdir
 
@@ -40,6 +41,8 @@ df_LSTM_sent = pd.read_csv("INDP/Data/LSTM/df_LSTM_sent.csv")
 # Categorise sentiment score
 df_LSTM_sent['LSTM_sent_cat'] = df_LSTM_sent.apply(lambda row: 
     class_lstm.cat_sentiment_str(row['LSTM_sent']), axis=1)
+# Convert tweet_date to datetime
+df_LSTM_sent['tweet_date'] = pd.to_datetime(df_LSTM_sent['tweet_date'])
 df_LSTM_sent_unique = df_LSTM_sent.drop_duplicates(subset=['tweet_id'])
 
 #%% Compare to VADER
@@ -243,8 +246,6 @@ for utla in utlas:
 
 #%% Compare sentiment scores over time
 
-# Convert tweet_date to datetime
-df_LSTM_sent_unique['tweet_date'] = pd.to_datetime(df_LSTM_sent_unique['tweet_date'])
 # Split into initial data (Jan only - used for training) and recent data 
 # (15 Feb onwards)
 def date_split(var):
@@ -260,13 +261,51 @@ df_LSTM_sent_unique.groupby(['date_split','LSTM_sent_cat']).size()/df_LSTM_sent_
 # Calculate rolling 7-day sentiment score
 ## Overall
 df_7day = (df_LSTM_sent_unique.groupby('tweet_date')['LSTM_sent']
-    .agg(['sum','count']).reset_index())
+    .agg(['sum','count']).asfreq('d').reset_index())
+df_7day['sum'] = df_7day['sum'].fillna(0)
+df_7day['count'] = df_7day['count'].fillna(0)
 
 df_7day_rolling = df_7day.rolling(window=7).sum()
 df_7day_rolling['mean'] = df_7day_rolling['sum']/df_7day_rolling['count']
+df_7day_rolling['mean'] = df_7day_rolling['mean'].fillna(np.inf)
 
 df_7day_rolling = df_7day[['tweet_date']].join(df_7day_rolling)
 
+all_dates = df_7day.tweet_date
+## By search term
+dates_searchterms = pd.DataFrame(list(product(all_dates,search_terms)),
+                                 columns=['tweet_date','search_term'])
+
+df_7day_search_term = (df_LSTM_sent_unique.groupby(
+        ['tweet_date','search_term'])['LSTM_sent']
+    .agg(['sum','count']).reset_index().merge(dates_searchterms, 
+        on=['tweet_date','search_term'], how='right'))
+df_7day_search_term['sum'] = df_7day_search_term['sum'].fillna(0)
+df_7day_search_term['count'] = df_7day_search_term['count'].fillna(0)
+
+df_7day_search_term['sum'] = df_7day_search_term.groupby(['search_term'])['sum'].transform(lambda x: x.rolling(7).sum())
+df_7day_search_term['count'] = df_7day_search_term.groupby(['search_term'])['count'].transform(lambda x: x.rolling(7).sum())
+
+df_7day_search_term['mean'] = df_7day_search_term['sum']/df_7day_search_term['count']
+df_7day_search_term['mean'] = df_7day_search_term['mean'].fillna(np.inf)
+
+## By UTLA
+dates_utlas = pd.DataFrame(list(product(all_dates,utlas)),
+                                 columns=['tweet_date','area'])
+
+df_7day_utla = (df_LSTM_sent.groupby(['tweet_date','area'])['LSTM_sent']
+    .agg(['sum','count']).reset_index().merge(dates_utlas, 
+        on=['tweet_date','area'], how='right'))
+df_7day_utla['sum'] = df_7day_utla['sum'].fillna(0)
+df_7day_utla['count'] = df_7day_utla['count'].fillna(0)
+
+df_7day_utla['sum'] = df_7day_utla.groupby(['area'])['sum'].transform(lambda x: x.rolling(7).sum())
+df_7day_utla['count'] = df_7day_utla.groupby(['area'])['count'].transform(lambda x: x.rolling(7).sum())
+
+df_7day_utla['mean'] = df_7day_utla['sum']/df_7day_utla['count']
+df_7day_utla['mean'] = df_7day_utla['mean'].fillna(np.inf)
+
+# Plot overall 7-day average
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.lineplot(data=df_7day_rolling, x='tweet_date', y='mean', ax=ax, 
                    color='#007C91')
@@ -274,22 +313,25 @@ ax.set(xlabel = 'Tweet date', ylabel = '7-day rolling average sentiment score')
 plt.tight_layout()
 plt.savefig("{0}/LSTM_sentiment_roll7.png".format(finalmodel_folder))
 
-## By search term
-
-
-## By UTLA
-
-
-
-
-# Plot overall 7-day average
-
-
 # Plot 7-day average by search term
-
+g = sns.relplot(data=df_7day_search_term, x='tweet_date', y='mean', 
+                col='search_term', col_wrap=5, kind='line')
+g.set_axis_labels(x_var = 'Tweet date', 
+                  y_var = 'Mean sentiment score')
+g.set_titles(col_template = 'Search term: {col_name}')
+g.fig.suptitle('Sentiment scores over time, by search term')
+g.tight_layout()
+g.savefig("{0}/LSTM_sentiment_roll7_searchterms.png".format(finalmodel_folder))
 
 # Plot 7-day average by UTLA
-
+g = sns.relplot(data=df_7day_utla, x='tweet_date', y='mean', 
+                col='area', col_wrap=5, kind='line')
+g.set_axis_labels(x_var = 'Tweet date', 
+                  y_var = 'Mean sentiment score')
+g.set_titles(col_template = '{col_name}')
+g.fig.suptitle('Sentiment scores over time, by UTLA')
+g.tight_layout()
+g.savefig("{0}/LSTM_sentiment_roll7_UTLAs.png".format(finalmodel_folder))
 
 
 
