@@ -35,9 +35,9 @@ geo_folder = '{0}/INDP/Geo'.format(filepath)
 map_folder = '{0}/INDP/Geo/Maps'.format(filepath)
 
 if not os.path.exists(geo_folder):
-    os.makedirs('{0}/INDP/Geo'.format(filepath))
+    os.makedirs(geo_folder)
 if not os.path.exists(map_folder):
-    os.makedirs('{0}/INDP/Geo/Maps'.format(filepath))
+    os.makedirs(map_folder)
     
 # Download polygons from https://geoportal.statistics.gov.uk/
 geojson_url = ("https://opendata.arcgis.com/datasets/"
