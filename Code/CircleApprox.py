@@ -55,7 +55,7 @@ class CircleApprox():
         
         return area_poly
     
-    def map_poly(self,area_poly,lat,long,area_name):
+    def map_poly(self,area_poly,lat,long,area_name,map_folder):
         
         # Map actual target UTLA and save
         area_geoj = folium.GeoJson(data=area_poly,
@@ -63,7 +63,7 @@ class CircleApprox():
         
         m = folium.Map(location=[lat,long],tiles = 'CartoDB positron')
         area_geoj.add_to(m)
-        m.save("{0}.html".format(area_name))
+        m.save("{0}/{1}.html".format(map_folder,area_name))
     
     # Define function that draws circle with given radius around a certain 
     # point
@@ -242,17 +242,18 @@ class CircleApprox():
             
         return df_area, all_poly
     
-    def map_circle(self,all_poly,area_name,min_area_perc_tot,lat,long):
+    def map_circle(self,all_poly,area_name,min_area_perc_tot,lat,long,map_folder):
         # Map circle-based approximation and save
         all_geoj = folium.GeoJson(data=all_poly,
                                   style_function=lambda x: {'fillColor': 'blue'})
         
         c = folium.Map(location=[lat,long],tiles = 'CartoDB positron')
         all_geoj.add_to(c)
-        c.save("{0}_circles_{1}.html".format(area_name,min_area_perc_tot))
+        c.save("{0}/{1}_circles_{2}_{3}.html".format(map_folder,area_name,
+               min_area_perc_tot,min_circle_perc_tot))
     
     def areas_circles(self,areas,radius_increment,df_polygons,area_var,poly_var,
-                      min_area_perc_tot,min_circle_perc_tot):
+                      min_area_perc_tot,min_circle_perc_tot,map_folder):
         df_areas = pd.DataFrame()
         for area in areas:
             print(area)
@@ -274,7 +275,7 @@ class CircleApprox():
             lat = df_polygons[df_polygons[area_var]==area].LAT
             long = df_polygons[df_polygons[area_var]==area].LONG
             
-            self.map_poly(area_poly,lat,long,area)
+            self.map_poly(area_poly,lat,long,area,map_folder)
             
             initial_poly, df_area, area_perc_tot, circle_perc_tot = self.initial_circle(
                     lat,long,area_poly,area,df_area,radius_increment,min_circle_perc_tot)
@@ -291,6 +292,6 @@ class CircleApprox():
             df_areas = df_areas.append(df_area)
             
             # Map circle-based approximation and save
-            self.map_circle(all_poly,area,min_area_perc_tot,lat,long)
+            self.map_circle(all_poly,area,min_area_perc_tot,lat,long,map_folder)
             
         return df_areas
