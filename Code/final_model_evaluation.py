@@ -106,6 +106,7 @@ fig = sns.scatterplot(data=df_LSTM_sent_unique,x='LSTM_sent',y='VADER_sent',
                       hue='VADER_conf_cat',hue_order=sentconf_cat_order, 
                       ax=ax)
 ax.set(xlabel = 'LSTM sentiment score',ylabel = 'VADER sentiment score')
+plt.legend(title='VADER confidence category',bbox_to_anchor=(1,1))
 plt.suptitle('Comparison of LSTM predictions and VADER scores')
 plt.tight_layout()
 plt.savefig("{0}/LSTM_v_VADER.png".format(finalmodel_folder))
@@ -135,6 +136,95 @@ ax.set(xlabel = 'Absolute difference between LSTM and VADER sentiment scores',
        title = 'Comparison of absolute error and VADER confidence')
 plt.tight_layout()
 plt.savefig("{0}/ae_v_sentconf.png".format(finalmodel_folder))
+
+# Plot ROC curve (would be much easier with newer version of scikit-learn, but can't install newest version on PHE laptop)
+from sklearn.metrics import roc_curve
+from tensorflow.keras.utils import to_categorical
+
+y_test = to_categorical(df_LSTM_sent_unique.VADER_sent.apply(class_v.cat_sentiment),num_classes=3)
+y_score = to_categorical(df_LSTM_sent_unique.LSTM_sent.apply(class_v.cat_sentiment),num_classes=3)
+n_classes=3
+# https://scikit-learn.org/stable/auto_examples/model_selection/plot_roc.html
+from sklearn.metrics import roc_curve, auc
+from itertools import cycle
+lw=2
+# Compute ROC curve and ROC area for each class
+fpr = dict()
+tpr = dict()
+roc_auc = dict()
+for i in range(n_classes):
+    fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+    roc_auc[i] = auc(fpr[i], tpr[i])
+
+# Compute micro-average ROC curve and ROC area
+fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
+roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+# Macro-average ROC curve
+# First aggregate all false positive rates
+all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+
+# Then interpolate all ROC curves at this points
+mean_tpr = np.zeros_like(all_fpr)
+for i in range(n_classes):
+    mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+
+# Finally average it and compute AUC
+mean_tpr /= n_classes
+
+fpr["macro"] = all_fpr
+tpr["macro"] = mean_tpr
+roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+
+# Plot all ROC curves
+plt.figure()
+plt.plot(
+    fpr["micro"],
+    tpr["micro"],
+    label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
+    color="deeppink",
+    linestyle=":",
+    linewidth=4,
+)
+
+plt.plot(
+    fpr["macro"],
+    tpr["macro"],
+    label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
+    color="navy",
+    linestyle=":",
+    linewidth=4,
+)
+
+colors = cycle(["aqua", "darkorange", "cornflowerblue"])
+cats = cycle(['neutral','positive','negative'])
+for i, color, cat in zip(range(n_classes), colors, cats):
+    plt.plot(
+        fpr[i],
+        tpr[i],
+        color=color,
+        lw=lw,
+        label="ROC curve of class {0} (area = {1:0.2f})".format(cat, roc_auc[i]),
+    )
+
+plt.plot([0, 1], [0, 1], "k--", lw=lw)
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("Multiclass ROC curve")
+plt.legend(loc="lower right")
+#plt.show()
+plt.savefig("{0}/ROC_curve.png".format(finalmodel_folder))
+
+# Check which category is which
+print([sum(x) for x in zip(*y_score)])
+print(pd.value_counts(df_LSTM_sent_unique.LSTM_sent.apply(class_v.cat_sentiment)))
+print([sum(x) for x in zip(*y_test)])
+print(pd.value_counts(df_LSTM_sent_unique.VADER_sent.apply(class_v.cat_sentiment)))
+
+from sklearn.metrics import roc_auc_score
+print(roc_auc_score(y_test,y_score))
 
 #%% Investigate sentiment scores, overall, by search term and by UTLA
 
@@ -246,17 +336,7 @@ for utla in utlas:
 
 #%% Compare sentiment scores over time
 
-# Split into initial data (Jan only - used for training) and recent data 
-# (15 Feb onwards)
-def date_split(var):
-    if var <= pd.to_datetime('2022-01-31'):
-        return 'Initial'
-    elif var >= pd.to_datetime('2022-02-15'):
-        return 'Recent'
-
-df_LSTM_sent_unique['date_split'] = df_LSTM_sent_unique['tweet_date'].apply(date_split)
-df_LSTM_sent_unique.groupby('date_split')['LSTM_sent'].mean()
-df_LSTM_sent_unique.groupby(['date_split','LSTM_sent_cat']).size()/df_LSTM_sent_unique.groupby('date_split').size()
+#%% 7-day rolling averages
 
 # Calculate rolling 7-day sentiment score
 ## Overall
@@ -315,7 +395,7 @@ plt.savefig("{0}/LSTM_sentiment_roll7.png".format(finalmodel_folder))
 
 # Plot 7-day average by search term
 g = sns.relplot(data=df_7day_search_term, x='tweet_date', y='mean', 
-                col='search_term', col_wrap=5, kind='line')
+                col='search_term', col_wrap=5, kind='line', color='#007C91')
 g.set_axis_labels(x_var = 'Tweet date', 
                   y_var = 'Mean sentiment score')
 g.set_titles(col_template = 'Search term: {col_name}')
@@ -325,7 +405,7 @@ g.savefig("{0}/LSTM_sentiment_roll7_searchterms.png".format(finalmodel_folder))
 
 # Plot 7-day average by UTLA
 g = sns.relplot(data=df_7day_utla, x='tweet_date', y='mean', 
-                col='area', col_wrap=5, kind='line')
+                col='area', col_wrap=5, kind='line', color='#007C91')
 g.set_axis_labels(x_var = 'Tweet date', 
                   y_var = 'Mean sentiment score')
 g.set_titles(col_template = '{col_name}')
@@ -333,8 +413,45 @@ g.fig.suptitle('Sentiment scores over time, by UTLA')
 g.tight_layout()
 g.savefig("{0}/LSTM_sentiment_roll7_UTLAs.png".format(finalmodel_folder))
 
+#%% Jan/Feb split
+
+# Split into initial data (Jan only - used for training) and recent data 
+# (15 Feb onwards)
+def date_split(var):
+    if var <= pd.to_datetime('2022-01-31'):
+        return 'Initial'
+    elif var >= pd.to_datetime('2022-02-15'):
+        return 'Recent'
+
+df_LSTM_sent_unique['date_split'] = df_LSTM_sent_unique['tweet_date'].apply(date_split)
+df_LSTM_sent_unique['month_year'] = pd.to_datetime(df_LSTM_sent_unique['tweet_date']).dt.to_period('M')
+df_LSTM_sent_unique.groupby('month_year')['LSTM_sent'].mean()
+df_LSTM_sent_unique.groupby(['month_year','LSTM_sent_cat']).size()/df_LSTM_sent_unique.groupby('month_year').size()
+
+df_LSTM_sent_unique_JanFeb = df_LSTM_sent_unique[pd.to_datetime(df_LSTM_sent_unique.tweet_date)>='2022-01-01']
 
 
+df_LSTM_sent['month_year'] = pd.to_datetime(df_LSTM_sent['tweet_date']).dt.to_period('M')
+df_LSTM_sent_JanFeb = df_LSTM_sent[pd.to_datetime(df_LSTM_sent.tweet_date)>='2022-01-01']
+
+# Overall box plot
+fig, ax = plt.subplots(figsize=(12,6))
+fig = sns.boxplot(data=df_LSTM_sent_unique_JanFeb, x='month_year', y='LSTM_sent',
+                  color='#007C91')
+ax.set(xlabel = 'Tweet date', ylabel = 'Sentiment score', 
+       title = 'Sentiment scores: January 2022 v February 2022')
+plt.tight_layout()
+plt.savefig("{0}/LSTM_sentiment_JanFeb_box.png".format(finalmodel_folder))
+
+# UTLA box plot
+g = sns.catplot(data=df_LSTM_sent_JanFeb, x='month_year', y='LSTM_sent', 
+                col='area', col_wrap=5, kind='box', color='#007C91')
+g.set_axis_labels(x_var = 'Tweet date', 
+                  y_var = 'Sentiment score')
+g.set_titles(col_template = '{col_name}')
+g.fig.suptitle('Sentiment scores: January 2022 v February 2022, by UTLA')
+g.tight_layout()
+g.savefig("{0}/LSTM_sentiment_JanFeb_UTLAs_box.png".format(finalmodel_folder))
 
 
 
