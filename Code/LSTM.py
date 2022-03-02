@@ -250,6 +250,11 @@ class LSTM():
                                          model_timestamp)
             
             df_scores = df_scores.append(score_dict,ignore_index=True)
+        
+        df_scores = df_scores[['units','dropout','epochs','hiddenlayers',
+                               'learning_rate','model','test2_auc',
+                               'test2_corr','test2_mae','test2_mse','test_auc',
+                               'test_corr','test_mae','test_mse','time_taken']]
         return df_scores
     
     def cat_sentiment_str(self,var):
