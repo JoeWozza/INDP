@@ -94,7 +94,7 @@ sentconf_cat_order = ['VeryHigh','High','Low','VeryLow','Zero']
 ## Compare distributions
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.violinplot(data=df_LSTM_sent_unique[['LSTM_sent','VADER_sent']],
-                     cut=0,inner='quartile',ax=ax)
+                     cut=0,inner='quartile',ax=ax,color='#007C91')
 ax.set_xticklabels(['LSTM','VADER'])
 plt.suptitle('Comparison of LSTM and VADER distributions')
 plt.tight_layout()
@@ -113,7 +113,8 @@ plt.savefig("{0}/LSTM_v_VADER.png".format(finalmodel_folder))
 
 ### What about by sentconf_cat
 g = sns.relplot(data=df_LSTM_sent_unique, x='LSTM_sent', y='VADER_sent', 
-                col='VADER_conf_cat', col_order=sentconf_cat_order)
+                col='VADER_conf_cat', col_order=sentconf_cat_order,
+                color='#007C91')
 g.set_axis_labels(x_var = 'LSTM sentiment score', 
                   y_var = 'VADER sentiment score')
 g.set_titles(col_template = 'Confidence in VADER score: {col_name}')
@@ -130,7 +131,7 @@ df_LSTM_sent_unique['absolute_error'] = abs(df_LSTM_sent_unique['LSTM_sent']-
 
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.scatterplot(data=df_LSTM_sent_unique, x='absolute_error', 
-                      y='VADER_conf')
+                      y='VADER_conf',color='#007C91')
 ax.set(xlabel = 'Absolute difference between LSTM and VADER sentiment scores', 
        ylabel = 'Confidence in VADER score',
        title = 'Comparison of absolute error and VADER confidence')
