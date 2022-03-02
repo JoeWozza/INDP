@@ -113,7 +113,7 @@ plt.savefig("{0}/LSTM_v_VADER.png".format(finalmodel_folder))
 
 ### What about by sentconf_cat
 g = sns.relplot(data=df_LSTM_sent_unique, x='LSTM_sent', y='VADER_sent', 
-                col='VADER_conf_cat', col_order=sentconf_cat_order,
+                col='VADER_conf_cat', col_order=sentconf_cat_order, col_wrap=2,
                 color='#007C91')
 g.set_axis_labels(x_var = 'LSTM sentiment score', 
                   y_var = 'VADER sentiment score')
