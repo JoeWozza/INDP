@@ -33,7 +33,7 @@ class_v = VADER.VADER()
 
 class LSTM():
     
-    # Tokenize and lemmatize texts
+    # Tokenizes and lemmatizes texts
     # text_list: list of texts to tokenize and lemmatize
     # Code adapted from https://towardsdatascience.com/sentiment-analysis-comparing-3-common-approaches-naive-bayes-lstm-and-vader-ab561f834f89
     def data_cleaning(self,text_list):
@@ -56,6 +56,12 @@ class LSTM():
             reconstructed_list.append(' '.join(lemmatized_tokens))
         return reconstructed_list
     
+    # Splits data into train, validation and test data and fits tokenizer
+    # df_train: dataframe containing training data
+    # train_samp: sample size with which to train, validate and test model
+    # textvar: name of variable containing the text that is to be analysed
+    # sentvar: name of variable containing the sentiment score
+    # maxlen: maximum number of words in text
     def train_val_test(self,df_train,train_samp,textvar,sentvar,maxlen):
         
         # Take samples of training dataset
@@ -80,11 +86,31 @@ class LSTM():
         
         return X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer                
     
+    # Prepares data for scoring an LSTM model on
+    # X: pandas series containing text variable on which to score the model
+    # tokenizer: tokenizer with which to prepare the text data
+    # maxlen: maximum number of words in the text
     def score_prep(self,X,tokenizer,maxlen):
         X=self.data_cleaning(X)
         X=pad_sequences(tokenizer.texts_to_sequences(X), maxlen=maxlen)
         return X
     
+    # Trains an LSTM model
+    # X_train: pandas series containing the text data on which the model is to 
+    #   be trained
+    # y_train: pandas series containing the sentiment data on which the model
+    #   is to be trained
+    # X_val: pandas series containing the text data on which the model is to 
+    #   be validated
+    # y_val: pandas series containing the sentiment data on which the model
+    #   is to be validated
+    # vocab_size: number of words in X_train, defined and outputted from 
+    #   train_val_test
+    # units: number of units the LSTM model should contain
+    # dropout: dropout rate of the LSTM model
+    # hiddenlayers: number of hidden layers the LSTM model should contain
+    # epochs: number of epochs used in training the LSTM model
+    # learning_rate: learning rate of the LSTM model    
     def train_LSTM(self,X_train,y_train,X_val,y_val,vocab_size,units,dropout,
                    hiddenlayers,epochs,learning_rate):
         model=Sequential()
@@ -112,7 +138,13 @@ class LSTM():
         model_timestamp = str(datetime.now()).replace(' ','_').replace(':','')
         print(model_timestamp)
         return model, model_timestamp
-        
+    
+    # Saves an LSTM model and the history and tokenizer associated with it
+    # model: the LSTM model
+    # tokenizer: tokenizer associated with the LSTM model
+    # model_timestamp: the timestamp associated with the LSTM model, used for
+    #   creating a folder to save the model in
+    # basefile: filepath in which to save the folder named model_timestamp
     def save_model(self,model,tokenizer,model_timestamp,basefile):
         # Create folder for model
         if not os.path.exists('{0}/{1}'.format(basefile,model_timestamp)):
@@ -128,14 +160,22 @@ class LSTM():
         with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_timestamp),
                   'wb') as handle:
             pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
-            
+    
+    # Returns the dataset to which a record in the model history pertains
+    # row: pandas dataframe row
     def get_dataset(self,row):
         if "_" in row['variable']:
             val = 'valid'
         else:
             val = 'train'
         return val
-            
+    
+    # Plots the performance of the model on the training and validation
+    # datasets by the number of epochs
+    # model: the LSTM model
+    # model_timestamp: the timestamp associated with the LSTM model, used for
+    #   creating a folder to save the model in
+    # basefile: filepath in which to save the folder named model_timestamp
     def epoch_perf_plot(self,model,model_timestamp,basefile):
         # Plot performance by number of epochs
         df_sns = pd.DataFrame(model.history.history)
@@ -154,15 +194,25 @@ class LSTM():
             ax.xaxis.set_major_locator(tkr.MultipleLocator(5))
         g.tight_layout()
         g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_timestamp))
-        
+    
+    # Prepares the alternative test data for testing the model on
+    # df_test2: pandas dataframe containing alternative test data
+    # test2_samp: sample size on which to test model
+    # tokenizer: tokenizer with which to prepare the text data
+    # textvar: name of variable containing the text that is to be scored
+    # sentvar: name of variable containing the sentiment score
+    # maxlen: maximum number of words in text
     def test2_prep(self,df_test2,test2_samp,tokenizer,textvar,sentvar,maxlen):
-        # Prepare test2 data
         df_test2_samp = df_test2.sample(n=test2_samp)
         X_test2=df_test2_samp[textvar]
         X_test2=self.score_prep(X_test2,tokenizer,maxlen)
         y_test2=df_test2_samp[sentvar]
         return X_test2,y_test2
     
+    # Calculates the multiclass AUC score (num_classes=3)
+    # y_true: pandas series containing sentiment scores
+    # y_score: numpy array containing predicted sentiment scores (as
+    #   outputted by model)
     def auc_score(self,y_true,y_score):
         y_true = to_categorical(y_true.apply(class_v.cat_sentiment),
                                 num_classes=3)
@@ -171,6 +221,26 @@ class LSTM():
         score = roc_auc_score(y_true,y_score)
         return score
     
+    # Produces dictionary containing model hyperparameters and performance 
+    #   stats
+    # units: number of units the LSTM model should contain
+    # dropout: dropout rate of the LSTM model
+    # hiddenlayers: number of hidden layers the LSTM model should contain
+    # epochs: number of epochs used in training the LSTM model
+    # learning_rate: learning rate of the LSTM model
+    # start: start time
+    # end: end time
+    # y_test: pandas series containing sentiment scores to be tested against
+    # predict_test: numpy array containing sentiment scores predicted on test
+    # data (as outputted by model)
+    # sentvar: name of variable containing the sentiment score
+    # y_test2: pandas series containing alternative sentiment scores to be
+    #   tested against
+    # predict_test2: numpy array containing sentiment scores predicted on 
+    # alternative test data (as outputted by model)
+    # basefile: filepath in which to save the folder named model_timestamp
+    # model_timestamp: the timestamp associated with the LSTM model, used for
+    #   creating a folder to save the model in
     def score_dict(self,units,dropout,hiddenlayers,epochs,learning_rate,
                    start,end,y_test,predict_test,sentvar,y_test2,predict_test2,
                    basefile,model_timestamp):
@@ -196,6 +266,17 @@ class LSTM():
                 score_dict)
         return score_dict                    
     
+    # Loops over combinations of hyperparameters, trains LSTM models using each
+    # combination and outputs relevant performance metrics.
+    # df_train: pandas dataframe containing training data
+    # df_hp: pandas dataframe containing all combinations of hyperparameters
+    # basefile: filepath in which to save the folder named model_timestamp
+    # train_samp: sample size with which to train, validate and test model
+    # textvar: name of variable containing the text that is to be analysed
+    # sentvar: name of variable containing the sentiment score
+    # maxlen: maximum number of words in text
+    # df_test2: pandas dataframe containing alternative test data
+    # test2_samp: sample size on which to test model
     def hp_loop(self,df_train,df_hp,basefile,train_samp,textvar,sentvar,
                 maxlen,df_test2,test2_samp):
         X_train,y_train,X_val,y_val,X_test,y_test,vocab_size,tokenizer = (
@@ -257,6 +338,9 @@ class LSTM():
                                'test_corr','test_mae','test_mse','time_taken']]
         return df_scores
     
+    # Categorises sentiment score
+    # var: pandas series containing sentiment score (between -1 and 1, 
+    #   inclusive)
     def cat_sentiment_str(self,var):
         # Positive
         if var >= 0.05:
