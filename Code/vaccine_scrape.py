@@ -5,7 +5,7 @@ Created on Fri Dec 17 09:35:27 2021
 @author: Joe.WozniczkaWells
 """
 
-from os import chdir, getcwd
+from os import chdir
 
 # Set file path
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
@@ -14,18 +14,10 @@ chdir(filepath)
 
 import pandas as pd
 import snscrape.modules.twitter as sntwitter
-import itertools
 import os
 
-from datetime import date, datetime
-from dateutil.relativedelta import relativedelta
+from datetime import datetime
 from time import sleep
-
-def datespan(startDate, endDate, delta):
-    currentDate = startDate
-    while currentDate < endDate:
-        yield currentDate
-        currentDate += delta
         
 # Create folders in which to save twitter data
 data_folder = '{0}/INDP/Data'.format(filepath)
@@ -44,7 +36,6 @@ searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-searchTerms = ['vaccines']
 #%% Functions
 
 def sntwitter_scrape(df_tweets,df_error,area,term,lat,long,radius,since,until,
