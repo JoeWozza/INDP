@@ -18,7 +18,10 @@ import random
 import requests
 
 class CircleApprox():
-    
+        
+    # Extracts the polygon of an area from the coordinates in a geopandas 
+    # geoseries
+    # geom_col: geopandas geoseries containing coordinates of area
     def extract_area_poly(self,geom_col):         
         
         # Look for coordinates of internal polygon(s)
@@ -270,7 +273,7 @@ class CircleApprox():
             # Keep target UTLA data only
             gdfd = df_polygons.loc[df_polygons[area_var]==area].copy()
             
-            area_poly = self.extract_area_poly(gdfd[poly_var],gdfd)
+            area_poly = self.extract_area_poly(gdfd[poly_var])
             
             lat = df_polygons[df_polygons[area_var]==area].LAT
             long = df_polygons[df_polygons[area_var]==area].LONG
