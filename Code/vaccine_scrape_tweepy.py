@@ -13,8 +13,8 @@ filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
 
-from INDP.Code import TweetScrape
-class_ts = TweetScrape.TweetScrape()
+from INDP.Code import TweepyScrape
+class_ts = TweepyScrape.TweetScrape()
 
 import pandas as pd
 import tweepy
