@@ -34,7 +34,7 @@ class CircleApprox():
         
         ext_coords = ext.apply(self.coord_lister)
         
-        # A bit of a fudge but this seems to work for UTLAs with multiple external 
+        # A bit of a fudge but this seems to work for areas with multiple external 
         # rings.
         for l in range(0,len(ext_coords)):
             if l == 0:
@@ -66,7 +66,7 @@ class CircleApprox():
     # map_folder: folder in which to save map
     def map_poly(self,area_poly,lat,long,area_name,map_folder):
         
-        # Map actual target UTLA and save
+        # Map actual target area and save
         area_geoj = folium.GeoJson(data=area_poly,
                                style_function=lambda x: {'fillColor': 'orange'})
         
@@ -103,7 +103,7 @@ class CircleApprox():
     # area_poly: shapely polygon of target area
     def circle_intersection_area(self,circle_poly,area_poly):
         
-        # Area of circle that is in target utla
+        # Area of circle that is in target area
         circle_area_area = circle_poly.intersection(area_poly).area
         
         return circle_area_area
@@ -366,10 +366,10 @@ class CircleApprox():
             n_bad = 0
             
             # Create empty dataframe, to contain centroids and radiuses of 
-            # target UTLA circles
+            # target area circles
             df_area = pd.DataFrame(columns = ['area','lat','long','radius'])
             
-            # Keep target UTLA data only
+            # Keep target area data only
             gdfd = df_polygons.loc[df_polygons[area_var]==area].copy()
             
             area_poly = self.extract_area_poly(gdfd[poly_var])
@@ -391,7 +391,7 @@ class CircleApprox():
                                                        area_poly,area,df_area,
                                                        min_circle_perc_tot)
             
-            # Append the circles for the target UTLA to those for all UTLAs
+            # Append the circles for the target area to those for all areas
             df_areas = df_areas.append(df_area)
             
             # Map circle-based approximation and save
