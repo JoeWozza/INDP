@@ -295,6 +295,7 @@ class CircleApprox():
                                all_poly,area_poly,area_name,df_area,
                                min_circle_perc_tot):
         while area_perc_tot < min_area_perc_tot:
+            
             # Every 50 consecutive unsuccessful attempts to draw a circle, half the
             # radius_increment
             radius_increment = self.dec_radius_increment(radius_increment,
@@ -303,10 +304,10 @@ class CircleApprox():
             # Select a random point on the polygon
             rand_point = self.poly_random_point(all_poly,area_poly,area_name)
             
-            #	4. Repeat step 2, using the point identified in step 3. Circle_perc 
-            # should be updated to be the area covered by any of the circles.
+            #	Keep drawing circles
             circle_area_area_tot = self.circle_intersection_area(all_poly,
                                                                  area_poly)
+            
             circle_perc_tot_work, area_perc_tot_work = self.calc_area_perc(
                     all_poly,area_poly)
             
@@ -381,7 +382,7 @@ class CircleApprox():
             
             initial_poly, df_area, area_perc_tot, circle_perc_tot = (
                     self.initial_circle(lat,long,area_poly,area,df_area,
-                                        radius_increment,min_circle_perc_tot)
+                                        radius_increment,min_circle_perc_tot))
             
             df_area, all_poly = self.fill_area_with_circles(area_perc_tot,
                                                        circle_perc_tot,
