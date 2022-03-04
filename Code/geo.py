@@ -67,8 +67,9 @@ min_circle_perc_tot = 95
 
 #%%
 # Loop through Midlands UTLAs
-df_utlas = class_ca.areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM","geometry",
-                         min_utla_perc_tot,min_circle_perc_tot,map_folder)
+df_utlas = class_ca.areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM",
+                                  "geometry",min_utla_perc_tot,
+                                  min_circle_perc_tot,map_folder)
 
 # Save circle details in csv
 df_utlas.to_csv("{0}/df_utlas_{1}_{2}.csv".format(geo_folder,min_utla_perc_tot,
