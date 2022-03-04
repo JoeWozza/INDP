@@ -19,7 +19,7 @@ import requests
 
 class CircleApprox():
     
-    def extract_area_poly(self,geom_col,polygon):         
+    def extract_area_poly(self,geom_col):         
         
         # Look for coordinates of internal polygon(s)
         int_coords = geom_col.apply(
@@ -27,7 +27,7 @@ class CircleApprox():
                 ).explode().explode()
         
         # Extract coordinates of external polygon(s)
-        ext = polygon.explode().geometry.exterior
+        ext = geom_col.explode().exterior
         
         ext_coords = ext.apply(self.coord_lister)
         
