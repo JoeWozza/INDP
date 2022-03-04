@@ -87,10 +87,5 @@ class TweetScrape():
                                                   'date':'tweet_datetime',
                                                   'id':'tweet_id',
                                                   'username':'user_name'})
-            # Remove tweets that do not contain any of the search terms 
-            # (sometimes sntwitter downloads tweets where the search term is in 
-            # the user's bio)
-            df_tweets = (df_tweets[df_tweets['tweet_text'].str.lower().str.
-                                   contains('|'.join(searchTerms))])
         
         return df_tweets, df_error

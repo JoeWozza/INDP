@@ -33,14 +33,14 @@ if not os.path.exists(tweets_folder):
 
 # Read in df_utlas from csv
 df_utlas = pd.read_csv("INDP/Geo/df_utlas_90_95.csv")
-#df_utlas = df_utlas[df_utlas['utla']=='Derby']
+df_utlas = df_utlas[df_utlas['utla'].isin(['Derby'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-#searchTerms = ['vaccines']
+searchTerms = ['vaccines']
 #%% Functions
 
 # Create empty dataframes
@@ -53,6 +53,13 @@ until = datetime.now().strftime("%Y-%m-%d")
 df_tweets, df_error = class_ts.sntwitter_scrape_areas(df_tweets,df_error,
                                                       df_utlas,'utla',since,
                                                       until,searchTerms)
+
+# Remove tweets that do not contain any of the search terms 
+# (sometimes sntwitter downloads tweets where the search term is in 
+# the user's bio)
+df_tweets = (df_tweets[df_tweets['tweet_text'].str.lower().str
+                       .contains('|'.join(searchTerms))])
+
 df_tweets_deduped = df_tweets.drop_duplicates(subset=['tweet_id','area'])
 
 # Output to csv
