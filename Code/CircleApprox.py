@@ -324,12 +324,15 @@ class CircleApprox():
     # all_poly: shapely polygon of target area
     # area_name: name of target area
     # min_area_perc_tot: minimum percentage of target area to be covered by
-    #   approximate area# lat: latitude of centre of mapped area
+    #   approximate area
+    # min_circle_perc_tot: minimum percentage of circle-covered area that must
+    #   be within target area
+    # lat: latitude of centre of mapped area
     # lat: latitude of centre of mapped area
     # long: longitude of centre of mapped area
     # map_folder: folder in which to save map
-    def map_circle(self,all_poly,area_name,min_area_perc_tot,lat,long,
-                   map_folder):
+    def map_circle(self,all_poly,area_name,min_area_perc_tot,
+                   min_circle_perc_tot,lat,long,map_folder):
         # Map circle-based approximation and save
         all_geoj = folium.GeoJson(data=all_poly,
                                   style_function=lambda x: {'fillColor': 
@@ -396,7 +399,7 @@ class CircleApprox():
             df_areas = df_areas.append(df_area)
             
             # Map circle-based approximation and save
-            self.map_circle(all_poly,area,min_area_perc_tot,lat,long,
-                            map_folder)
+            self.map_circle(all_poly,area,min_area_perc_tot,
+                            min_circle_perc_tot,lat,long,map_folder)
             
         return df_areas
