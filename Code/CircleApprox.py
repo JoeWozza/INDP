@@ -232,13 +232,12 @@ class CircleApprox():
     # rand_point: shapely point of centre of new circle
     # area_poly: shapely polygon of target area
     # all_poly: shapely polygon of target area
-    # circle_area_area_tot: REMOVE
     # n_bad: number of consecutive unsuccessful attempts to draw a circle
     # area_name: name of target area
     # df_area: pandas dataframe in which to save details of circle
     def draw_save_circle(self,min_circle_perc_tot,circle_perc_tot_work,radius,
                          radius_increment,rand_point,area_poly,all_poly,
-                         circle_area_area_tot,n_bad,area_name,df_area):
+                         n_bad,area_name,df_area):
         
         while circle_perc_tot_work >= min_circle_perc_tot:
                 
@@ -316,7 +315,7 @@ class CircleApprox():
             all_poly, area_perc_tot, df_area, n_bad = self.draw_save_circle(
                     min_circle_perc_tot,circle_perc_tot,radius,
                     radius_increment,rand_point,area_poly,all_poly,
-                    circle_area_area_tot,n_bad,area_name,df_area)
+                    n_bad,area_name,df_area)
             
         return df_area, all_poly
     
