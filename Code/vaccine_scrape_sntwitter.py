@@ -33,14 +33,14 @@ if not os.path.exists(tweets_folder):
 
 # Read in df_utlas from csv
 df_utlas = pd.read_csv("INDP/Geo/df_utlas_90_95.csv")
-df_utlas = df_utlas[df_utlas['utla'].isin(['Derby'])]
+#df_utlas = df_utlas[df_utlas['utla'].isin(['Derby','Leicester','Rutland'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-searchTerms = ['vaccines']
+#searchTerms = ['vaccines']
 #%% Functions
 
 # Create empty dataframes
