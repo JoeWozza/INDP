@@ -36,12 +36,9 @@ class TweetScrape():
                     df_error = df_error.append(dict_error, ignore_index=True)
                 print('error')
             else:
-                print(df.shape)
                 df['area'] = area
                 df['search_term'] = term
                 df['area_circle'] = area_circle
-                print(df.shape)
-                print(df_tweets.shape)
                 df_tweets = df_tweets.append(df)
                 print('success')
                 print('')
