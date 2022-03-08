@@ -50,7 +50,7 @@ lstm_folder = 'INDP/Data/LSTM'
 if not os.path.exists(lstm_folder):
     os.makedirs(lstm_folder)
 
-#%% Read in all Midlands data
+#%% Score on TweePy Midlands data
 # Get list of all files in path
 files = listdir("INDP/Data/Tweets")
 
@@ -80,14 +80,32 @@ with open('{0}/{1}/tokenizer.pickle'.format(hp2_folder,model_timestamp),
     tokenizer = pickle.load(handle)
 
 # VADER cleaning: remove twitter handles, URLs and most special characters
-X_text = df_tweets_deduped['tweet_text'].apply(class_v.clean)
+X_text_tweepy = df_tweets_deduped['tweet_text'].apply(class_v.clean)
 # LSTM cleaning: lemmatisation and tokenisation
-X = class_lstm.score_prep(X_text,tokenizer,100)
+X_tweepy = class_lstm.score_prep(X_text_tweepy,tokenizer,100)
 # Score model on Midlands tweets
-df_tweets_deduped['LSTM_sent'] = model.predict(X)
-df_tweets_deduped['tweet_text_clean'] = X_text
+df_tweets_deduped['LSTM_sent'] = model.predict(X_tweepy)
+df_tweets_deduped['tweet_text_clean'] = X_text_tweepy
 
-df_tweets_deduped.to_csv("{0}/df_LSTM_sent.csv".format(lstm_folder))
+df_tweets_deduped.to_csv("{0}/df_tweepy_LSTM_sent.csv".format(lstm_folder))
 
+#%% Score on sntwitter Midlands data
 
+# Define common string at start of file names
+filestring_sntwitter = 'df_tweets_deduped_sntwitter_'
+# Get list of all files containing common string
+tweets_files_sntwitter = ['INDP/Data/Tweets/{0}'.format(s) for s in files if filestring_sntwitter in s]
+# Select most recent file
+max_file = max(tweets_files_sntwitter, key=os.path.getctime)
+# Read in file
+df_tweets_sntwitter = pd.read_csv(max_file)
 
+# VADER cleaning: remove twitter handles, URLs and most special characters
+X_text_sntwitter = df_tweets_sntwitter['tweet_text'].apply(class_v.clean)
+# LSTM cleaning: lemmatisation and tokenisation
+X_sntwitter = class_lstm.score_prep(X_text_sntwitter,tokenizer,100)
+# Score model on Midlands tweets
+df_tweets_sntwitter['LSTM_sent'] = model.predict(X_sntwitter)
+df_tweets_sntwitter['tweet_text_clean'] = X_text_sntwitter
+
+df_tweets_sntwitter.to_csv("{0}/df_sntwitter_LSTM_sent.csv".format(lstm_folder))
