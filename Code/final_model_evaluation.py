@@ -543,16 +543,18 @@ df_snt_LSTM_sent['tweet_date'] = pd.to_datetime(df_snt_LSTM_sent.tweet_datetime)
 # Deduplicate by tweet_id
 df_snt_LSTM_sent_unique = df_snt_LSTM_sent.drop_duplicates(subset=['tweet_id'])
 
-#%% 7-day rolling averages
-
-# Calculate rolling 7-day sentiment score
+#%% Rolling averages
+df_snt_LSTM_sent_unique.to_csv('INDP/Data/LSTM/test.csv')
+# Calculate rolling sentiment score
+# Define window length (days)
+wind=30
 ## Overall
 df_snt_7day = (df_snt_LSTM_sent_unique.groupby('tweet_date')['LSTM_sent']
     .agg(['sum','count']).asfreq('d').reset_index())
 df_snt_7day['sum'] = df_snt_7day['sum'].fillna(0)
 df_snt_7day['count'] = df_snt_7day['count'].fillna(0)
 
-df_snt_7day_rolling = df_snt_7day.rolling(window=7).sum()
+df_snt_7day_rolling = df_snt_7day.rolling(window=wind).sum()
 df_snt_7day_rolling['mean'] = df_snt_7day_rolling['sum']/df_snt_7day_rolling['count']
 df_snt_7day_rolling['mean'] = df_snt_7day_rolling['mean'].fillna(np.inf)
 
@@ -570,8 +572,8 @@ df_snt_7day_search_term = (df_snt_LSTM_sent_unique.groupby(
 df_snt_7day_search_term['sum'] = df_snt_7day_search_term['sum'].fillna(0)
 df_snt_7day_search_term['count'] = df_snt_7day_search_term['count'].fillna(0)
 
-df_snt_7day_search_term['sum'] = df_snt_7day_search_term.groupby(['search_term'])['sum'].transform(lambda x: x.rolling(7).sum())
-df_snt_7day_search_term['count'] = df_snt_7day_search_term.groupby(['search_term'])['count'].transform(lambda x: x.rolling(7).sum())
+df_snt_7day_search_term['sum'] = df_snt_7day_search_term.groupby(['search_term'])['sum'].transform(lambda x: x.rolling(wind).sum())
+df_snt_7day_search_term['count'] = df_snt_7day_search_term.groupby(['search_term'])['count'].transform(lambda x: x.rolling(wind).sum())
 
 df_snt_7day_search_term['mean'] = df_snt_7day_search_term['sum']/df_snt_7day_search_term['count']
 df_snt_7day_search_term['mean'] = df_snt_7day_search_term['mean'].fillna(np.inf)
@@ -586,8 +588,8 @@ df_snt_7day_utla = (df_snt_LSTM_sent.groupby(['tweet_date','area'])['LSTM_sent']
 df_snt_7day_utla['sum'] = df_snt_7day_utla['sum'].fillna(0)
 df_snt_7day_utla['count'] = df_snt_7day_utla['count'].fillna(0)
 
-df_snt_7day_utla['sum'] = df_snt_7day_utla.groupby(['area'])['sum'].transform(lambda x: x.rolling(7).sum())
-df_snt_7day_utla['count'] = df_snt_7day_utla.groupby(['area'])['count'].transform(lambda x: x.rolling(7).sum())
+df_snt_7day_utla['sum'] = df_snt_7day_utla.groupby(['area'])['sum'].transform(lambda x: x.rolling(wind).sum())
+df_snt_7day_utla['count'] = df_snt_7day_utla.groupby(['area'])['count'].transform(lambda x: x.rolling(wind).sum())
 
 df_snt_7day_utla['mean'] = df_snt_7day_utla['sum']/df_snt_7day_utla['count']
 df_snt_7day_utla['mean'] = df_snt_7day_utla['mean'].fillna(np.inf)
@@ -596,9 +598,24 @@ df_snt_7day_utla['mean'] = df_snt_7day_utla['mean'].fillna(np.inf)
 fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.lineplot(data=df_snt_7day_rolling, x='tweet_date', y='mean', ax=ax, 
                    color='#007C91')
-ax.set(xlabel = 'Tweet date', ylabel = '7-day rolling average sentiment score')
+ax.set(xlabel = 'Tweet date', ylabel = '{wind}-day rolling average sentiment score')
+ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', color='#00AB8E',
+           label='Pfizer vaccine approved by MHRA')
+ax.axvline(pd.to_datetime('2020-12-08'), linestyle='dashed', color='#00AB8E',
+           label='First COVID-19 vaccine administered by NHS')
+ax.axvline(pd.to_datetime('2021-04-07'), linestyle='solid', color='#E40046',
+           label='Under 30s offered alternative to Oxford/AZ vaccine, due to blood clot links')
+ax.axvline(pd.to_datetime('2021-05-07'), linestyle='dashed', color='#E40046',
+           label='Under 40s offered alternative to Oxford/AZ vaccine, due to blood clot links')
+ax.axvline(pd.to_datetime('2021-07-12'), linestyle='dashdot', color='#00AB8E',
+           label='80% of over 12s in UK receive at least one vaccine dose')
+ax.axvline(pd.to_datetime('2021-11-12'), linestyle='dotted', color='#00AB8E',
+           label='80% of over 12s in UK receive at least two vaccine doses')
+ax.axvline(pd.to_datetime('2021-11-27'), linestyle='dashdot', color='#E40046',
+           label='First case of Omicron variant identified in UK')
+ax.legend(loc=(1.05,0))
 plt.tight_layout()
-plt.savefig("{0}/LSTM_snt_sentiment_roll7.png".format(finalmodel_folder))
+plt.savefig("{0}/LSTM_snt_sentiment_roll{1}.png".format(finalmodel_folder,wind))
 
 # Plot 7-day average by search term
 g = sns.relplot(data=df_snt_7day_search_term, x='tweet_date', y='mean', 
@@ -611,16 +628,47 @@ g.tight_layout()
 g.savefig("{0}/LSTM_snt_sentiment_roll7_searchterms.png".format(finalmodel_folder))
 
 # Plot 7-day average by UTLA
+df_snt_7day_utla['area_type'] = 'UTLA'
+df_snt_7day_rolling['area_type'] = 'National'
+
+for utla in utlas:
+    df_snt_7day_rolling['area'] = utla
+    df_snt_7day_utla = df_snt_7day_utla.append(df_snt_7day_rolling)
+
 g = sns.relplot(data=df_snt_7day_utla, x='tweet_date', y='mean', 
-                col='area', col_wrap=5, kind='line', color='#007C91')
+                col='area', col_wrap=5, kind='line', 
+                palette=['#007C91','#582C83'], hue='area_type')
+g.set_axis_labels(x_var = 'Tweet date', 
+                  y_var = '{wind}-day rolling average sentiment score')
+g.set_titles(col_template = '{col_name}')
+g.set_xticklabels(rotation=30)
+for i,ax in enumerate(g.axes.flat):
+    ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', color='#00AB8E',
+               label='Pfizer vaccine approved by MHRA')
+    ax.axvline(pd.to_datetime('2020-12-08'), linestyle='dashed', color='#00AB8E',
+               label='First COVID-19 vaccine administered by NHS')
+    ax.axvline(pd.to_datetime('2021-04-07'), linestyle='solid', color='#E40046',
+               label='Under 30s offered alternative to Oxford/AZ vaccine, due to blood clot links')
+    ax.axvline(pd.to_datetime('2021-05-07'), linestyle='dashed', color='#E40046',
+               label='Under 40s offered alternative to Oxford/AZ vaccine, due to blood clot links')
+    ax.axvline(pd.to_datetime('2021-07-12'), linestyle='dashdot', color='#00AB8E',
+               label='80% of over 12s in UK receive at least one vaccine dose')
+    ax.axvline(pd.to_datetime('2021-11-12'), linestyle='dotted', color='#00AB8E',
+               label='80% of over 12s in UK receive at least two vaccine doses')
+    ax.axvline(pd.to_datetime('2021-11-27'), linestyle='dashdot', color='#E40046',
+               label='First case of Omicron variant identified in UK')
+    if i == len(g.axes.flat)-1:
+        ax.legend(loc=(-3,-0.5))
+g._legend.set_title("Average")
+g.tight_layout()
+g.savefig("{0}/LSTM_snt_sentiment_roll{1}_UTLAs.png".format(finalmodel_folder,wind))
+
+g = sns.lineplot(data=df_snt_7day_utla, x='tweet_date', y='mean', 
+                hue='area', color='#007C91')
 g.set_axis_labels(x_var = 'Tweet date', 
                   y_var = 'Mean sentiment score')
-g.set_titles(col_template = '{col_name}')
 g.fig.suptitle('Sentiment scores over time, by UTLA')
 g.tight_layout()
-g.savefig("{0}/LSTM_snt_sentiment_roll7_UTLAs.png".format(finalmodel_folder))
-
-
 
 
 
