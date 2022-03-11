@@ -56,68 +56,67 @@ df_snt_LSTM_sent_unique.to_csv('INDP/Data/LSTM/test.csv')
 # Define window length (days)
 wind=30
 ## Overall
-df_snt_7day = (df_snt_LSTM_sent_unique.groupby('tweet_date')['LSTM_sent']
+df_snt_day = (df_snt_LSTM_sent_unique.groupby('tweet_date')['LSTM_sent']
     .agg(['sum','count']).asfreq('d').reset_index())
-df_snt_7day['sum'] = df_snt_7day['sum'].fillna(0)
-df_snt_7day['count'] = df_snt_7day['count'].fillna(0)
+df_snt_day['sum'] = df_snt_day['sum'].fillna(0)
+df_snt_day['count'] = df_snt_day['count'].fillna(0)
 
-df_snt_7day_rolling = df_snt_7day.rolling(window=wind).sum()
-df_snt_7day_rolling['mean'] = (df_snt_7day_rolling['sum']/
-                   df_snt_7day_rolling['count'])
-df_snt_7day_rolling['mean'] = df_snt_7day_rolling['mean'].fillna(np.inf)
+df_snt_rolling = df_snt_day.rolling(window=wind).sum()
+df_snt_rolling['mean'] = (df_snt_rolling['sum']/df_snt_rolling['count'])
+df_snt_rolling['mean'] = df_snt_rolling['mean'].fillna(np.inf)
 
-df_snt_7day_rolling = df_snt_7day[['tweet_date']].join(df_snt_7day_rolling)
+df_snt_rolling = df_snt_day[['tweet_date']].join(df_snt_rolling)
 
-all_dates = df_snt_7day.tweet_date
+all_dates = df_snt_day.tweet_date
 ## By search term
 dates_searchterms = pd.DataFrame(list(product(all_dates,search_terms)),
                                  columns=['tweet_date','search_term'])
 
-df_snt_7day_search_term = (df_snt_LSTM_sent_unique.groupby(
+df_snt_day_search_term = (df_snt_LSTM_sent_unique.groupby(
         ['tweet_date','search_term'])['LSTM_sent']
     .agg(['sum','count']).reset_index().merge(dates_searchterms, 
         on=['tweet_date','search_term'], how='right'))
-df_snt_7day_search_term['sum'] = df_snt_7day_search_term['sum'].fillna(0)
-df_snt_7day_search_term['count'] = df_snt_7day_search_term['count'].fillna(0)
+df_snt_day_search_term['sum'] = df_snt_day_search_term['sum'].fillna(0)
+df_snt_day_search_term['count'] = df_snt_day_search_term['count'].fillna(0)
 
-df_snt_7day_search_term['sum'] = (df_snt_7day_search_term
+df_snt_day_search_term['sum'] = (df_snt_day_search_term
                        .groupby(['search_term'])['sum']
                        .transform(lambda x: x.rolling(wind).sum()))
-df_snt_7day_search_term['count'] = (df_snt_7day_search_term
+df_snt_day_search_term['count'] = (df_snt_day_search_term
                        .groupby(['search_term'])['count']
                        .transform(lambda x: x.rolling(wind).sum()))
 
-df_snt_7day_search_term['mean'] = (df_snt_7day_search_term['sum']/
-                       df_snt_7day_search_term['count'])
-df_snt_7day_search_term['mean'] = (df_snt_7day_search_term['mean'].
+df_snt_day_search_term['mean'] = (df_snt_day_search_term['sum']/
+                       df_snt_day_search_term['count'])
+df_snt_day_search_term['mean'] = (df_snt_day_search_term['mean'].
                        fillna(np.inf))
 
 ## By UTLA
 dates_snt_utlas = pd.DataFrame(list(product(all_dates,utlas)),
                                  columns=['tweet_date','area'])
 
-df_snt_7day_utla = (df_snt_LSTM_sent
-                    .groupby(['tweet_date','area'])['LSTM_sent']
-                    .agg(['sum','count']).reset_index().merge(dates_snt_utlas,
-                        on=['tweet_date','area'], how='right'))
-df_snt_7day_utla['sum'] = df_snt_7day_utla['sum'].fillna(0)
-df_snt_7day_utla['count'] = df_snt_7day_utla['count'].fillna(0)
+df_snt_day_utla = (df_snt_LSTM_sent
+                   .groupby(['tweet_date','area'])['LSTM_sent']
+                   .agg(['sum','count']).reset_index().merge(dates_snt_utlas,
+                       on=['tweet_date','area'], how='right'))
+df_snt_day_utla['sum'] = df_snt_day_utla['sum'].fillna(0)
+df_snt_day_utla['count'] = df_snt_day_utla['count'].fillna(0)
 
-df_snt_7day_utla['sum'] = (df_snt_7day_utla
-                .groupby(['area'])['sum']
-                .transform(lambda x: x.rolling(wind).sum()))
-df_snt_7day_utla['count'] = (df_snt_7day_utla
-                .groupby(['area'])['count']
-                .transform(lambda x: x.rolling(wind).sum()))
+df_snt_day_utla['sum'] = (df_snt_day_utla
+               .groupby(['area'])['sum']
+               .transform(lambda x: x.rolling(wind).sum()))
+df_snt_day_utla['count'] = (df_snt_day_utla
+               .groupby(['area'])['count']
+               .transform(lambda x: x.rolling(wind).sum()))
 
-df_snt_7day_utla['mean'] = df_snt_7day_utla['sum']/df_snt_7day_utla['count']
-df_snt_7day_utla['mean'] = df_snt_7day_utla['mean'].fillna(np.inf)
+df_snt_day_utla['mean'] = df_snt_day_utla['sum']/df_snt_day_utla['count']
+df_snt_day_utla['mean'] = df_snt_day_utla['mean'].fillna(np.inf)
 
 # Plot overall 7-day average
 fig, ax = plt.subplots(figsize = (12,6))
-fig = sns.lineplot(data=df_snt_7day_rolling, x='tweet_date', y='mean', ax=ax, 
+fig = sns.lineplot(data=df_snt_rolling, x='tweet_date', y='mean', ax=ax, 
                    color='#007C91')
-ax.set(xlabel = 'Tweet date', 
+ax.set(xlabel = 'Tweet date',
        ylabel = '{wind}-day rolling average sentiment score')
 ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', color='#00AB8E',
            label='Pfizer vaccine approved by MHRA')
@@ -140,28 +139,28 @@ plt.tight_layout()
 plt.savefig("{0}/LSTM_snt_sentiment_roll{1}.png".format(finalmodel_folder,
             wind))
 
-# Plot 7-day average by search term
-g = sns.relplot(data=df_snt_7day_search_term, x='tweet_date', y='mean', 
+# Plot rolling average by search term
+g = sns.relplot(data=df_snt_day_search_term, x='tweet_date', y='mean', 
                 col='search_term', col_wrap=5, kind='line', color='#007C91')
 g.set_axis_labels(x_var = 'Tweet date', 
                   y_var = 'Mean sentiment score')
 g.set_titles(col_template = 'Search term: {col_name}')
 g.fig.suptitle('Sentiment scores over time, by search term')
 g.tight_layout()
-g.savefig("{0}/LSTM_snt_sentiment_roll7_searchterms.png".format(
-        finalmodel_folder))
+g.savefig("{0}/LSTM_snt_sentiment_roll{1}_searchterms.png".format(
+        finalmodel_folder,wind))
 
 # Plot 7-day average by UTLA
-df_snt_7day_utla['area_type'] = 'UTLA'
-df_snt_7day_rolling['area_type'] = 'National'
+df_snt_day_utla['area_type'] = 'UTLA'
+df_snt_rolling['area_type'] = 'National'
 
 for utla in utlas:
-    df_snt_7day_rolling['area'] = utla
-    df_snt_7day_utla = df_snt_7day_utla.append(df_snt_7day_rolling)
+    df_snt_rolling['area'] = utla
+    df_snt_day_utla = df_snt_day_utla.append(df_snt_rolling)
 
-g = sns.relplot(data=df_snt_7day_utla, x='tweet_date', y='mean', 
-                col='area', col_wrap=5, kind='line', 
-                palette=['#007C91','#582C83'], hue='area_type')
+g = sns.relplot(data=df_snt_day_utla, x='tweet_date', y='mean', col='area', 
+                col_wrap=5, kind='line', palette=['#007C91','#582C83'], 
+                                                  hue='area_type')
 g.set_axis_labels(x_var = 'Tweet date', 
                   y_var = '{wind}-day rolling average sentiment score')
 g.set_titles(col_template = '{col_name}')
@@ -196,3 +195,18 @@ g._legend.set_title("Average")
 g.tight_layout()
 g.savefig("{0}/LSTM_snt_sentiment_roll{1}_UTLAs.png".format(finalmodel_folder,
           wind))
+
+#%% Analyse percentage of positive/negative/neutral tweets over time
+
+
+
+
+
+
+
+
+
+
+
+
+
