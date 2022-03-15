@@ -56,22 +56,19 @@ mids_utlas = ['Derby','Leicester','Rutland','Nottingham',
               'Wolverhampton','Derbyshire','Leicestershire','Lincolnshire',
               'Nottinghamshire','Staffordshire','Warwickshire','Worcestershire'
               ]
-#mids_utlas = ['Derby','Nottingham']
-#mids_utlas = ['Derby']
-#mids_utlas = ['Derbyshire','Derby']
 
 # Min area of target UTLA that must be covered by circle-based approximation
 min_utla_perc_tot = 90
 # Min amount of circle-based approximation that must be in target UTLA
 min_circle_perc_tot = 95
 
-#%%
-# Loop through Midlands UTLAs
+#%% Circle-based approximation of Midlands UTLAs
+# Create circle-based approximations for all Midlands UTLAs
 df_utlas = class_ca.areas_circles(mids_utlas,1,utla_polygons,"CTYUA21NM",
                                   "geometry",min_utla_perc_tot,
                                   min_circle_perc_tot,map_folder)
 
-# Save circle details in csv
+# Save circle details to csv
 df_utlas.to_csv("{0}/df_utlas_{1}_{2}.csv".format(geo_folder,min_utla_perc_tot,
                 min_circle_perc_tot))
 
@@ -88,10 +85,11 @@ df = ctry_polygons
 var = 'CTRY20NM'
 
 gdfd = ctry_polygons.loc[ctry_polygons['CTRY20NM']=='England'].copy()
-    
+
+# Extract shapely polygon of England
 eng_poly = class_ca.extract_area_poly(gdfd['geometry'],gdfd)
 
-# Approximate UK with circles
+## Approximate England with circles
 lat = gdfd.LAT
 long = gdfd.LONG
 area = 'England'
@@ -100,13 +98,16 @@ radius_increment = 10
 min_area_perc_tot = 90
 n_bad = 0
 
+# Draw map of England
 class_ca.map_poly(eng_poly,lat,long,area)
 
+# Draw initial circle
 initial_poly, df_area, area_perc_tot, circle_perc_tot = (class_ca.
                                                          initial_circle(
         lat,long,eng_poly,area,df_area,radius_increment,min_circle_perc_tot)
                                                          )
 
+# Draw subsequent circles
 df_area, all_poly = class_ca.fill_area_with_circles(area_perc_tot,
                                                     circle_perc_tot,
                                                     min_area_perc_tot,
@@ -115,6 +116,9 @@ df_area, all_poly = class_ca.fill_area_with_circles(area_perc_tot,
                                                     area,df_area,
                                                     min_circle_perc_tot)
 
+# Map circle-based approximation
 class_ca.map_poly(all_poly,lat,long,area)
+
+# Save circle details to csv
 df_area.to_csv("{0}/df_eng_{1}_{2}.csv".format(geo_folder,min_area_perc_tot,
                min_circle_perc_tot))
