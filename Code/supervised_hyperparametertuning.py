@@ -6,11 +6,8 @@ Created on Tue Feb  8 11:46:05 2022
 """
 
 import pandas as pd
-##
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-#from tensorflow.keras.utils import to_categorical
-#from tensorflow.keras.models import load_model
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
@@ -20,16 +17,13 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_squared_error, median_absolute_error
-#import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as tkr
 from datetime import datetime
 import pickle
-##
 import numpy as np
 import os
 from itertools import product
-
 from os import chdir, listdir
 
 # Set file path
@@ -138,171 +132,3 @@ df_scores_hp2 = class_lstm.hp_loop(df_VADER_train,df_hp2,hp2_folder,10000,
 df_scores_hp2.to_csv('{0}/df_scores_hp2.csv'.format(hp2_folder))
 # All perform well, but the best on correlation, mae and mse is 
 # 2022-02-18_175759.443774: 0.2, 50.0, 3.0, 0.01, 128.0
-
-
-#%% Ad-hocL calculate AUC on all hp1 models
-
-## Get results from all hyperparameter combinations into dataframe
-# Define common string in folder name
-folderstring = '2022-'
-# Get list of model timestamps
-all_folders = listdir(hp1_folder)
-folders = [s for s in all_folders if folderstring in s]
-
-# Remove these three (from hp2): 2022-02-18_213521.783721, 2022-02-18_175759.443774, 2022-02-18_135831.330432
-#folders.remove('2022-02-18_213521.783721')
-#folders.remove('2022-02-18_175759.443774')
-#folders.remove('2022-02-18_135831.330432')
-
-# Loop through folders and append results to dataframe
-df_scores = pd.DataFrame()
-for f in folders:
-    print(f)
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp1_folder,f),allow_pickle='TRUE').item()
-    score_dict['model'] = f
-    df_scores = df_scores.append(score_dict, ignore_index=True)
-
-from tensorflow.keras.models import load_model
-
-# Recreate old score_dicts
-for index,row in df_scores.iterrows():
-    score_dict = {'model': row['model'],
-                  'units': row['units'],
-                  'dropout': row['dropout'],
-                  'hiddenlayers': row['hiddenlayers'],
-                  'epochs': row['epochs'],
-                  'learning_rate': row['learning_rate'],
-                      'time_taken': row['time_taken'],
-                      'test_mse': row['test_mse'],
-                      'test_mae': row['test_mae'],
-                      'test_corr': row['test_corr'],
-                      'test2_mse': row['test2_mse'],
-                      'test2_mae': row['test2_mae'],
-                      'test2_corr': row['test2_corr']
-                          }
-    np.save('{0}/{1}/score_dict'.format(hp1_folder,row['model']),score_dict)
-
-# Add AUC to existing score_dicts
-df_train = df_VADER_train.sample(n=500)
-X_test = df_train['content_lemma']
-y_test = df_train['sentiment']
-df_test2 = df_VADER_test2.sample(n=500)
-X_test2 = df_test2['content_lemma']
-y_test2 = df_test2['sentiment']
-for index,row in df_scores.iterrows():
-    
-    units = row['units']
-    dropout = row['dropout']
-    hiddenlayers = row['hiddenlayers']
-    epochs = row['epochs']
-    learning_rate = row['learning_rate']
-    start = datetime.now()
-    end = datetime.now()
-    model_timestamp = row['model']
-    print(model_timestamp)
-    
-    # Load tokenizer and model
-    with open('{0}/{1}/tokenizer.pickle'.format(hp1_folder,model_timestamp), 
-              'rb') as handle:
-        tokenizer = pickle.load(handle)
-    model = load_model('{0}/{1}/model_reg.h5'.format(hp1_folder,model_timestamp))
-    # Apply tokenizer
-    vocab_size=len(tokenizer.word_index)+1
-    X_test_=pad_sequences(tokenizer.texts_to_sequences(X_test),maxlen=100)
-    X_test2_=pad_sequences(tokenizer.texts_to_sequences(X_test2),maxlen=100)
-    
-    # Score model on test dataset
-    predict_test = model.predict(X_test_)
-    # Score model on 'test2' dataset                
-    predict_test2 = model.predict(X_test2_)
-    
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp1_folder,model_timestamp),allow_pickle='TRUE').item()
-    
-    score_dict = {'model': score_dict['model'],
-                  'units': score_dict['units'],
-                  'dropout': score_dict['dropout'],
-                  'hiddenlayers': score_dict['hiddenlayers'],
-                  'epochs': score_dict['epochs'],
-                  'learning_rate': score_dict['learning_rate'],
-                  'time_taken': score_dict['time_taken'],
-                  'test_mse': score_dict['test_mse'],
-                  'test_mae': score_dict['test_mae'],
-                  'test_auc':class_lstm.auc_score(y_test,predict_test),
-                  'test_corr': score_dict['test_corr'],
-                  'test2_mse': score_dict['test2_mse'],
-                  'test2_mae': score_dict['test2_mae'],
-                  'test2_auc':class_lstm.auc_score(y_test2,predict_test2),
-                  'test2_corr': score_dict['test2_corr']
-                          }
-    np.save('{0}/{1}/score_dict_'.format(hp1_folder,model_timestamp),
-            score_dict)
-
-2022-02-11_080751.667393
-
-score_dict = np.load('{0}/2022-02-09_164246.262937/score_dict.npy'.format(hp1_folder),allow_pickle='TRUE').item()
-
-df_scores_ = pd.DataFrame()
-for f in folders:
-    print(f)
-    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(hp1_folder,f),allow_pickle='TRUE').item()
-    score_dict['model'] = f
-    df_scores_ = df_scores_.append(score_dict, ignore_index=True)
-
-# Check the MAE and MSE values of the top 5 are the same as in df_scores and hope the AUCs for these models aren't bad
-# They are the same. Most of the AUCs are okay, one is only 0.61.
-
-# Add AUC to existing score_dicts - hp2
-df_train = df_VADER_train.sample(n=1000)
-X_test = df_train['content_lemma']
-y_test = df_train['sentiment']
-df_test2 = df_VADER_test2.sample(n=10000)
-X_test2 = df_test2['content_lemma']
-y_test2 = df_test2['sentiment']
-for index,row in df_scores_hp2.iterrows():
-    model_timestamp = row['model']
-    print(model_timestamp)
-    
-    # Load tokenizer and model
-    with open('{0}/{1}/tokenizer.pickle'.format(hp2_folder,model_timestamp), 
-              'rb') as handle:
-        tokenizer = pickle.load(handle)
-    model = load_model('{0}/{1}/model_reg.h5'.format(hp2_folder,model_timestamp))
-    # Apply tokenizer
-    vocab_size=len(tokenizer.word_index)+1
-    X_test_=pad_sequences(tokenizer.texts_to_sequences(X_test),maxlen=100)
-    X_test2_=pad_sequences(tokenizer.texts_to_sequences(X_test2),maxlen=100)
-    
-    # Score model on test dataset
-    predict_test = model.predict(X_test_)
-    # Score model on 'test2' dataset                
-    predict_test2 = model.predict(X_test2_)
-    
-    score_dict = np.load('{0}/{1}/score_dict.npy'.format(hp2_folder,model_timestamp),allow_pickle='TRUE').item()
-    
-    score_dict = {'model': score_dict['model'],
-                  'units': score_dict['units'],
-                  'dropout': score_dict['dropout'],
-                  'hiddenlayers': score_dict['hiddenlayers'],
-                  'epochs': score_dict['epochs'],
-                  'learning_rate': score_dict['learning_rate'],
-                  'time_taken': score_dict['time_taken'],
-                  'test_mse': score_dict['test_mse'],
-                  'test_mae': score_dict['test_mae'],
-                  'test_auc':class_lstm.auc_score(y_test,predict_test),
-                  'test_corr': score_dict['test_corr'],
-                  'test2_mse': score_dict['test2_mse'],
-                  'test2_mae': score_dict['test2_mae'],
-                  'test2_auc':class_lstm.auc_score(y_test2,predict_test2),
-                  'test2_corr': score_dict['test2_corr']
-                          }
-    np.save('{0}/{1}/score_dict_'.format(hp2_folder,model_timestamp),
-            score_dict)
-
-df_scores_hp2_ = pd.DataFrame()
-for index,row in df_scores_hp2.iterrows():
-    f = row['model']
-    score_dict = np.load('{0}/{1}/score_dict_.npy'.format(hp2_folder,f),allow_pickle='TRUE').item()
-    score_dict['model'] = f
-    df_scores_hp2_ = df_scores_hp2_.append(score_dict, ignore_index=True)
-
-
