@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 24 16:23:28 2022
+This code is used to compare the output from the final model to the VADER
+sentiment scores and evaluate the performance of the model.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd
