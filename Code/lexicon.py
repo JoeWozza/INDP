@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jan 29 17:02:22 2022
+This code uses the VADER class to get sentiment scores (-1 to 1) and sentiment
+confidence scores (0 to 1) for Tweets captured in several dated csv files.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 from os import chdir, getcwd,listdir
@@ -11,28 +12,6 @@ from os import chdir, getcwd,listdir
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4\\")
 chdir(filepath)
-
-import pandas as pd
-from INDP.Code import VADER
-class_v = VADER.VADER()
-
-#%% Read in data
-
-# Define common string at start of file names
-filestring_eng = 'df_tweets_eng_tweepy_'
-# Get list of all files in path
-files = listdir(filepath + "\\INDP\\Data")
-# Get list of all files containing common string
-tweets_files_eng = [s for s in files if filestring_eng in s]
-# Combine data into single dataframe
-df_tweets_eng = pd.DataFrame()
-for f in tweets_files_eng:
-    print(f)
-    df_tweets_eng = df_tweets_eng.append(pd.read_csv("INDP\\Data\\" + f))
-# Deduplicate by tweet_id
-df_VADER = df_tweets_eng.drop_duplicates(subset=['tweet_id']).reset_index().drop(columns=['index','Unnamed: 0'])
-
-#%% VADER
 
 # Load packages
 import pandas as pd
@@ -50,6 +29,40 @@ from nltk.stem import WordNetLemmatizer
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
 analyzer = SentimentIntensityAnalyzer()
+from INDP.Code import VADER
+class_v = VADER.VADER()
+import os
+
+# Create folders in which to save VADER output
+data_folder = 'INDP/Data'
+vader_folder = 'INDP/Data/VADER'
+tweet_folder = 'INDP/Data/Tweets'
+
+if not os.path.exists(data_folder):
+    os.makedirs(data_folder)
+if not os.path.exists(vader_folder):
+    os.makedirs(vader_folder)
+
+#%% Read in data
+
+# Define common string at start of file names
+filestring_eng = 'df_tweets_eng_tweepy_'
+# Get list of all files in path
+files = listdir(tweet_folder)
+# Get list of all files containing common string
+tweets_files_eng = [s for s in files if filestring_eng in s]
+# Combine data into single dataframe
+df_tweets_eng = pd.DataFrame()
+for f in tweets_files_eng:
+    print(f)
+    df_tweets_eng = df_tweets_eng.append(pd.read_csv("{0}/{1}".format(f,
+                                                     tweet_folder)))
+# Deduplicate by tweet_id
+df_VADER = (df_tweets_eng
+            .drop_duplicates(subset=['tweet_id']).reset_index()
+            .drop(columns=['index','Unnamed: 0']))
+
+#%% VADER
 
 # Define stopwords list
 stopwords_fin = class_v.fin_stopwords(stopwords.words('english'))
@@ -72,4 +85,4 @@ df_VADER['sentconf_cat'] = df_VADER.apply(lambda row:
     class_v.cat_sentconf(row['sentconf'],mean_cs,std_cs), axis=1)
 
 # Output results to csv
-df_VADER.to_csv("INDP//Data//df_VADER.csv")
+df_VADER.to_csv("{0}/df_VADER.csv".format(vader_folder))
