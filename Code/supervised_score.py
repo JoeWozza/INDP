@@ -1,32 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 24 08:54:07 2022
+This script scores the final model on the TweePy and sntwitter data.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd
-##
-#from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-#from tensorflow.keras.utils import to_categorical
-#from tensorflow.keras.models import load_model
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.tag import pos_tag
 from tensorflow.keras.models import load_model
-#from sklearn.model_selection import train_test_split
-#from tensorflow.keras.models import Sequential
-#from tensorflow.keras import layers
-#from tensorflow.keras.optimizers import Adam
-#from sklearn.metrics import mean_squared_error, median_absolute_error
-#import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.ticker as tkr
 from datetime import datetime
 import pickle
-##
 import numpy as np
 from itertools import product
 
@@ -94,7 +83,8 @@ df_tweets_deduped.to_csv("{0}/df_tweepy_LSTM_sent.csv".format(lstm_folder))
 # Define common string at start of file names
 filestring_sntwitter = 'df_tweets_deduped_sntwitter_'
 # Get list of all files containing common string
-tweets_files_sntwitter = ['INDP/Data/Tweets/{0}'.format(s) for s in files if filestring_sntwitter in s]
+tweets_files_sntwitter = ['INDP/Data/Tweets/{0}'.format(s) for s in files if 
+                          filestring_sntwitter in s]
 # Select most recent file
 max_file = max(tweets_files_sntwitter, key=os.path.getctime)
 # Read in file
@@ -108,4 +98,5 @@ X_sntwitter = class_lstm.score_prep(X_text_sntwitter,tokenizer,100)
 df_tweets_sntwitter['LSTM_sent'] = model.predict(X_sntwitter)
 df_tweets_sntwitter['tweet_text_clean'] = X_text_sntwitter
 
-df_tweets_sntwitter.to_csv("{0}/df_sntwitter_LSTM_sent.csv".format(lstm_folder))
+df_tweets_sntwitter.to_csv("{0}/df_sntwitter_LSTM_sent.csv".format(
+        lstm_folder))

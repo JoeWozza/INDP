@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Jan 30 16:30:43 2022
+This code was used to create initial versions of the LSTM models. A multiclass
+model and a regression model were trained and the outputs investigated.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd
-##
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.utils import to_categorical
@@ -24,10 +24,8 @@ import seaborn as sns
 import matplotlib.ticker as tkr
 from datetime import datetime
 import pickle
-##
 import numpy as np
 import os
-
 from os import chdir, getcwd
 
 # Set file path
@@ -74,7 +72,7 @@ def cat_setconf(row):
     else:
         return 'Zero'
 
-# Code taken from https://towardsdatascience.com/sentiment-analysis-comparing-3-common-approaches-naive-bayes-lstm-and-vader-ab561f834f89
+# Code adapted from https://towardsdatascience.com/sentiment-analysis-comparing-3-common-approaches-naive-bayes-lstm-and-vader-ab561f834f89
 
 def data_cleaning(text_list): 
     stopwords_rem=False

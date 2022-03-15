@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb  8 11:46:05 2022
+This code is used to perform two rounds of hyperparameter tuning on the LSTM
+model and select the best model.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd

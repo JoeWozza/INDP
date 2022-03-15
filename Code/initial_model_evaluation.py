@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Feb  5 09:58:35 2022
+This code was used to evaluate initial versions of the multiclass and 
+regression LSTM models.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd

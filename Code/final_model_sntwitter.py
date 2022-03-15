@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 11 09:18:19 2022
+This code is used to investigate the output from the final model on the Tweets
+downloaded using sntwitter. This includes producing visualisations for the 
+final report.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd
