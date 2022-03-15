@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 12 12:10:23 2022
+The TweetScrape class contains functions that use the TweePy package to
+download Tweets from Twitter.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd
@@ -172,7 +173,8 @@ class TweetScrape():
         # areas: list of areas to assign tweets to
         for area in areas:
             print(area)
-            df_temp = df_in[df_in.user_location.str.contains(area)].copy()
+            df_temp = df_in[df_in.user_location.str.contains(area, 
+                                                             na=False)].copy()
             df_temp.area = area
         
         return df_temp

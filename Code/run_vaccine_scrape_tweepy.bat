@@ -1,1 +1,0 @@
-"C:\ProgramData\Anaconda3\pythonw.exe" "C:\Users\Joe.WozniczkaWells\Documents\Apprenticeship\UoB\SPFINDP21T4\INDP\Code\vaccine_scrape_tweepy.py"
