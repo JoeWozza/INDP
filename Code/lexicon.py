@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jan 29 17:02:22 2022
+This code uses the VADER class to get sentiment scores (-1 to 1) and sentiment
+confidence scores (0 to 1) for Tweets captured in several dated csv files.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 from os import chdir, getcwd,listdir
@@ -54,9 +55,12 @@ tweets_files_eng = [s for s in files if filestring_eng in s]
 df_tweets_eng = pd.DataFrame()
 for f in tweets_files_eng:
     print(f)
-    df_tweets_eng = df_tweets_eng.append(pd.read_csv("{0}/{1}".format(f,tweet_folder)))
+    df_tweets_eng = df_tweets_eng.append(pd.read_csv("{0}/{1}".format(f,
+                                                     tweet_folder)))
 # Deduplicate by tweet_id
-df_VADER = df_tweets_eng.drop_duplicates(subset=['tweet_id']).reset_index().drop(columns=['index','Unnamed: 0'])
+df_VADER = (df_tweets_eng
+            .drop_duplicates(subset=['tweet_id']).reset_index()
+            .drop(columns=['index','Unnamed: 0']))
 
 #%% VADER
 
