@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jan 12 12:10:23 2022
+The TweetScrape class contains functions that use the TweePy package to
+download Tweets from Twitter.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 import pandas as pd

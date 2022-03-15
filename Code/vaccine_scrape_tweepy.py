@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan  7 12:01:14 2022
+This script uses the TweetScrape class from TweepyScrape.py to download 
+vaccine-related Tweets from the last 9 days.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 #%% Packages
 
@@ -36,8 +37,6 @@ if not os.path.exists(tweets_folder):
 # 1475494865567899649/apps/new
 consumer_key = 'OPqZPaFbJHx8sXf8y7C5umylY'
 consumer_secret = 'qE6FdosS3aiSHNDcamEhxcGCxl40k4oKoPNoVTrrW8IMWkYSkB'
-# See here for keeping them secure: https://developer.twitter.com/en/docs
-# /twitter-api/getting-started/getting-access-to-the-twitter-api
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth, wait_on_rate_limit = True)
@@ -46,14 +45,12 @@ api = tweepy.API(auth, wait_on_rate_limit = True)
 
 # Read in df_areas from csv (for now, may do this all within Python eventually)
 df_utlas = pd.read_csv("INDP/Geo/df_utlas_90_95.csv")
-#df_utlas = df_utlas[df_utlas.utla.isin(['Derby','Nottingham'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-#searchTerms = ['vaccines','vaccine']
 
 # Initiate dataframes to collect tweets and record timings
 df_tweets = pd.DataFrame()

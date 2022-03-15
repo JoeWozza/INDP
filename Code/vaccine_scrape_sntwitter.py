@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 17 09:35:27 2021
+This script uses the TweetScrape class from sntwitterScrape.py to download 
+vaccine-related Tweets from the duration of the pandemic, from 11/3/22 to the 
+day the code is executed.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 from os import chdir
@@ -33,14 +35,12 @@ if not os.path.exists(tweets_folder):
 
 # Read in df_utlas from csv
 df_utlas = pd.read_csv("INDP/Geo/df_utlas_90_95.csv")
-#df_utlas = df_utlas[df_utlas['utla'].isin(['Derby','Leicester','Rutland'])]
 
 searchTerms = ['vaccines','vaccine','vaccinated',
                'vaccination','booster','pfizer',
                'vaccinations','unvaccinated',
                'astrazenica','antivaxxers',
                'vaccinate','vax','vaxxed']
-#searchTerms = ['vaccines']
 #%% Functions
 
 # Create empty dataframes
