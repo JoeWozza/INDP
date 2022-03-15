@@ -17,7 +17,6 @@ from nltk import pos_tag
 from nltk.corpus import wordnet
 nltk.download('stopwords')
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
 from nltk.stem import WordNetLemmatizer
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
@@ -48,18 +47,6 @@ class VADER():
         # text: text to be tokenized
         text = word_tokenize(text)
         return text
-    
-    def stem(self,text):
-        # Stemming: the removal of prefixes and suffixes to reduce a word to a 
-        #   base word (e.g. disappointing becomes disappoint, caring becomes 
-        #   car)
-        # text: text to be stemmed    
-        stemmer = PorterStemmer()
-        stem = ''
-        for ele in text:
-            if ele not in stopwords.words('english'):
-                stem = stem + ' ' + ele
-        return stem
 
     def fin_stopwords(self,stopwords_in):
         # Removes some words from stopwords, where they have an impact on the 
