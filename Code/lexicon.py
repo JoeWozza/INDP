@@ -45,18 +45,8 @@ if not os.path.exists(vader_folder):
 
 #%% Read in data
 
-# Define common string at start of file names
-filestring_eng = 'df_tweets_eng_tweepy_'
-# Get list of all files in path
-files = listdir(tweet_folder)
-# Get list of all files containing common string
-tweets_files_eng = [s for s in files if filestring_eng in s]
-# Combine data into single dataframe
-df_tweets_eng = pd.DataFrame()
-for f in tweets_files_eng:
-    print(f)
-    df_tweets_eng = df_tweets_eng.append(pd.read_csv("{0}/{1}".format(f,
-                                                     tweet_folder)))
+df_tweets_eng = pd.read_csv("{0}/df_tweets_eng.csv".format(tweet_folder))
+    
 # Deduplicate by tweet_id
 df_VADER = (df_tweets_eng
             .drop_duplicates(subset=['tweet_id']).reset_index()
