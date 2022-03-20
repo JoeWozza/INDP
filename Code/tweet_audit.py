@@ -92,35 +92,6 @@ ax.set(xlabel='Search term',ylabel='Number of Tweets')
 plt.tight_layout()
 plt.savefig('{0}/tweets_search_term.png'.format(audit_folder))
 
-# Get frequencies by circle, join onto circle df and do choropleth map
-tweets_circle = df_tweets_eng.groupby(['area_circle']).size().to_frame('tweets').reset_index()
-
-df_eng_circles = pd.read_csv('INDP/Geo/df_eng_90_95.csv')
-df_eng_circles['area_circle'] = df_eng_circles.index + 1
-df_eng_circles = df_eng_circles.join(tweets_circle, on='area_circle',
-                                     lsuffix='_l',rsuffix='_r')
-
-geometry = [Point(xy) for xy in zip(df_eng_circles.long,df_eng_circles.lat)]
-
-gdf_eng_circles = GeoDataFrame(df_eng_circles, crs="EPSG:4326", geometry=geometry)
-gdf_eng_circles['geometry'] = gdf_eng_circles.apply(lambda x: 
-    class_ca.draw_circle(x['geometry'],x['radius']), axis=1)
-gdf_eng_circles['tweets_per_km'] = gdf_eng_circles['tweets']/(math.pi*gdf_eng_circles['radius']*gdf_eng_circles['radius'])
-
-vmax = max(gdf_eng_circles['tweets_per_km'])
-
-fig, ax = plt.subplots(figsize = (12,6))
-gdf_eng_circles.plot(column='tweets_per_km',cmap='Blues',ax=ax)
-ax.axis('off')
-sm = plt.cm.ScalarMappable(cmap='Blues', norm=plt.Normalize(vmin=0, vmax=vmax))
-# empty array for the data range
-sm._A = []
-# add the colorbar to the figure
-cbar = fig.colorbar(sm)
-plt.savefig('{0}/circles.png'.format(audit_folder))
-# Due to overlapping of circles and big difference between two most densely
-# tweeted from areas and the rest, most of the map is the same colour.
-
 # Frequency by location
 tweets_user_location = df_tweets_deduped[pd.notna(df_tweets_deduped.user_location)]
 
