@@ -36,7 +36,7 @@ if not os.path.exists(audit_folder):
 files = listdir('INDP/Data/Tweets')
 
 #Combine all Midlands tweets
-filestring_mids = 'df_mids_tweets_tweepy_'
+filestring_mids = 'df_tweets_tweepy_'
 
 tweets_files_mids = [s for s in files if filestring_mids in s]
 
@@ -48,10 +48,9 @@ for f in tweets_files_mids:
                      .append(pd.read_csv('INDP/Data/Tweets/{0}'.format(f))))
 
 df_tweets_deduped = df_tweets_mids.drop_duplicates(subset=['tweet_id'])
-# 156,202 tweets
+
 df_tweets_deduped_term = (df_tweets_mids
                           .drop_duplicates(subset=['tweet_id','search_term']))
-# 193,120 when deduplicated by search_term as well.
 
 df_tweets_deduped.dtypes
 # Convert tweet_datetime and tweet_date to datetime
@@ -131,6 +130,7 @@ plt.figure()
 plt.imshow(wordcloud_location)
 plt.axis("off")
 plt.savefig('{0}/wordcloud_location_excstopwords.png'.format(audit_folder))
+# 'Gotham' and 'Gotham City' feature heavily here. These should be removed.
 
 # Frequency by user
 tweets_user_name = (df_tweets_deduped_term
