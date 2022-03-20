@@ -34,6 +34,7 @@ class VADER():
         text = re.sub('(?<=\@)(.*?)(?=\ )','',text)
         # Remove URLs
         text = re.sub(r'http\S+', '', text)
+        text = re.sub(r'https\S+', '', text)
         text = re.sub(r'bit.ly\S+', '', text)
         # Identify emojis, to prevent them from being removed
         emojis = ''.join(c for c in text if c in emoji.UNICODE_EMOJI['en'])
