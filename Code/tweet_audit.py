@@ -6,13 +6,14 @@ Created on Sat Jan 29 11:08:16 2022
 """
 
 from os import chdir, getcwd,listdir
-from INDP.Code import CircleApprox
-class_ca = CircleApprox.CircleApprox()
 
 # Set file path
 filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
             "SPFINDP21T4")
 chdir(filepath)
+
+from INDP.Code import CircleApprox
+class_ca = CircleApprox.CircleApprox()
 
 import pandas as pd
 import seaborn as sns
@@ -26,11 +27,8 @@ from datetime import datetime
 import os
 
 # Create folder in which to save visualisations
-images_folder = '{0}/INDP/Images'.format(filepath)
-audit_folder = '{0}/INDP/Images/Tweet_audit'.format(filepath)
+audit_folder = '{0}/INDP/Images/Tweet_audit/England'.format(filepath)
 
-if not os.path.exists(images_folder):
-    os.makedirs(images_folder)
 if not os.path.exists(audit_folder):
     os.makedirs(audit_folder)
 
