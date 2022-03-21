@@ -25,6 +25,7 @@ from shapely.geometry import Point, Polygon
 import math
 from datetime import datetime
 import os
+import numpy as np
 
 # Create folder in which to save visualisations
 audit_folder = '{0}/INDP/Images/Tweet_audit/Midlands'.format(filepath)
@@ -72,7 +73,8 @@ fig, ax = plt.subplots(figsize = (12,6))
 # Have to use barplot rather than countplot to get dates in correct order
 fig = sns.barplot(data=tweets_date, x='tweet_date', y='tweets', ax=ax, 
                   color='#007C91')
-x_dates = tweets_date.tweet_date.dt.strftime('%d-%m-%Y').sort_values().unique()
+x_dates = np.datetime_as_string(tweets_date.tweet_date.sort_values().unique(), 
+                                unit='D')
 ax.set_xticklabels(x_dates,rotation = 90)
 ax.set(xlabel='Date',ylabel='Number of Tweets')
 plt.tight_layout()
