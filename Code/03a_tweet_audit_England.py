@@ -40,6 +40,7 @@ files = listdir('INDP/Data/Tweets')
 filestring_eng = 'df_tweets_eng_tweepy_'
 
 tweets_files_eng = [s for s in files if filestring_eng in s]
+tweets_files_eng.remove('df_tweets_eng_tweepy_2022-02-23.csv')
 
 df_tweets_eng = pd.DataFrame()
 
@@ -90,7 +91,7 @@ fig, ax = plt.subplots(figsize = (12,6))
 # Have to use barplot rather than countplot to get dates in correct order
 fig = sns.barplot(data=tweets_hour, x='tweet_hour', y='tweets', ax=ax, 
                   color='#007C91')
-ax.set(xlabel='Time of day',ylabel='Number of Tweets')
+ax.set(xlabel='Hour of day',ylabel='Number of Tweets')
 plt.tight_layout()
 plt.savefig('{0}/tweets_time.png'.format(audit_folder))
 
