@@ -13,8 +13,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 from os import chdir, getcwd,listdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 import pandas as pd
@@ -81,6 +80,13 @@ fig = sns.distplot(df_VADER_unique['sentiment'], ax=ax, color='#007C91', kde_kws
 ax.set(xlabel = 'VADER sentiment score')
 plt.tight_layout()
 plt.savefig("{0}/VADER_sentiment.png".format(audit_folder))
+
+# Plot distribution of sentiment categories
+fig, ax = plt.subplots(figsize = (12,6))
+fig = sns.distplot(df_VADER_unique['sentiment_cat'], ax=ax, color='#007C91', kde_kws={'clip': (-1,1)})                
+ax.set(xlabel = 'VADER sentiment category')
+plt.tight_layout()
+plt.savefig("{0}/VADER_sentiment_cat.png".format(audit_folder))
 
 # Plot distribution of sentiment confidence scores
 fig, ax = plt.subplots(figsize = (12,6))
