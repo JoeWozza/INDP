@@ -127,16 +127,9 @@ n_epochs = 100
 #df_VADER_train.to_csv("df_VADER_train.csv")
 
 # Break data down into a training set and a validation set. AUC cannot be
-# calculated if y_true doesn't contain all casses. There are so few neutrals
-# that I don't think it's worth including these in the multiclass anyway.
-# Actually, that isn't the case. Neutrals make up about 20% of the dataset, so
-# I should keep them in.
-#X=df_VADER_train.reset_index()['content_lemma']
-#y=df_VADER_train.reset_index()[['sentiment_cat','sentiment']]
+# calculated if y_true doesn't contain all casses.
 X=df_VADER_train['content_lemma']
 y=df_VADER_train[['sentiment_cat','sentiment']]
-#X=X.head(10000)
-#y=y.head(10000)
 X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
 X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
                                                 test_size=.33)
@@ -188,13 +181,6 @@ with open('{0}/{1}/tokenizer.pickle'.format(basefile,model_multi_timestamp),
           'wb') as handle:
     pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-## Load model
-#model_multi_ = load_model('{0}/{1}/model_multi.h5'.format(basefile,
-#                          model_multi_timestamp))
-## Load history
-#history=np.load('{0}/{1}/model_multi_history.npy'.format(basefile,
-#                model_multi_timestamp),allow_pickle='TRUE').item()
-
 # Plot performance by number of epochs
 df_sns = pd.DataFrame(model_multi.history.history)
 df_sns['epoch'] = df_sns.index + 1
@@ -213,12 +199,6 @@ g.tight_layout()
 g.savefig('{0}/{1}/stat_graphs.png'.format(basefile,model_multi_timestamp))
 
 # Calculate accuray and AUC on test data
-# First need to work out how to process test data. Can it be done identically
-# to train and validation data? Are the word-to-number lookups specific to the
-# case? Specific to case but saved in tokenizer, so can be applied to test data.
-
-#X_test=df_VADER_test['content_lemma']
-#y_test=df_VADER_test['sentiment_cat']
 
 # Test on test dataset from high/very high confidence scores
 # Transform the data
@@ -237,8 +217,6 @@ print(accuracy_score(y_test_cat,predict_test_cat)) #0.9240584482403786
 # Test on low/very low confidence tweets
 X_test2=df_VADER_test2['content_lemma']
 y_test2=df_VADER_test2[['sentiment_cat','sentiment']]
-#X_test2=X_test2.head(100)
-#y_test2=y_test2.head(100)
 X_test2=data_cleaning(X_test2)
 X_test2=pad_sequences(tokenizer.texts_to_sequences(X_test2), maxlen=100)
 y_test2_cat=to_categorical(y_test2['sentiment_cat'])
@@ -262,40 +240,6 @@ np.save('{0}/{1}/score_dict'.format(basefile,model_multi_timestamp),
 # Seems to work quite well. Wonder if I can predict scores rather than categories, or at least multiple categories.
 
 #%% Regression
-
-#df_VADER = pd.read_csv("INDP//Data//df_VADER.csv")
-
-# Format tweet_id
-#df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
-
-# Categorise sentiment confidence
-#mcs = df_VADER.sentconf.mean()
-#std = df_VADER.sentconf.std()
-#thr = mcs + 0.5 * std
-
-#df_VADER['sentconf_cat'] = df_VADER.apply(lambda row: cat_setconf(row), axis=1)
-
-#df_VADER_train = df_VADER[df_VADER['sentconf'] >= thr - 0.5 * std].reset_index()
-#df_VADER_test2 = df_VADER[(df_VADER['sentconf'] < thr - 0.5 * std) & 
-#                         (df_VADER['sentconf'] > 0)].reset_index()
-
-#X=df_VADER_train['content_lemma']
-#y=df_VADER_train['sentiment']
-#X=X.head(100)
-#y=y.head(100)
-#X_train, X_testval, y_train, y_testval=train_test_split(X, y, test_size=.3)
-#X_val, X_test, y_val, y_test = train_test_split(X_testval, y_testval, 
-#                                                test_size=.33)
-
-# Fit and transform the data
-#X_train=data_cleaning(X_train)
-#X_val=data_cleaning(X_val)
-#tokenizer=Tokenizer()
-#tokenizer.fit_on_texts(X_train)
-#vocab_size=len(tokenizer.word_index)+1
-#print(f'Vocab Size: {vocab_size}')
-#X_train=pad_sequences(tokenizer.texts_to_sequences(X_train), maxlen=100)
-#X_val=pad_sequences(tokenizer.texts_to_sequences(X_val), maxlen=100)
 
 y_train_reg=y_train['sentiment']
 y_val_reg=y_val['sentiment']
