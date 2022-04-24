@@ -31,8 +31,7 @@ from sklearn.metrics import auc
 from itertools import cycle
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 from INDP.Code import LSTM
@@ -282,3 +281,5 @@ print(pd.value_counts(df_tweepy_LSTM_sent_unique.VADER_sent
                       .apply(class_v.cat_sentiment)))
 
 print(roc_auc_score(y_test,y_score))
+
+
