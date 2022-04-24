@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jan 29 11:08:16 2022
+This code is used to audit the England Tweets dataset
 
 @author: Joe.WozniczkaWells
 """
@@ -8,8 +8,7 @@ Created on Sat Jan 29 11:08:16 2022
 from os import chdir, getcwd,listdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4")
 chdir(filepath)
 
 from INDP.Code import CircleApprox
