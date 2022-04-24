@@ -8,8 +8,7 @@ This code cleans the data downloaded from Twitter.
 from os import chdir, getcwd,listdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 from INDP.Code import VADER
