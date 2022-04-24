@@ -59,10 +59,10 @@ df_tweets_mids = (df_tweets_mids[
     
 # Remove Tweets with location 'Gotham City'. These have been erroneously placed
 # in Nottinghamshire due to Twitter confusing Gotham City for Gotham in Notts
-df_tweets_eng = df_tweets_eng[df_tweets_eng.user_location.str
-                              .contains('Gotham City',na=False) == False]
-df_tweets_mids = df_tweets_mids[df_tweets_mids.user_location.str
-                                .contains('Gotham City',na=False) == False]
+df_tweets_eng = df_tweets_eng[df_tweets_eng.user_location.str.lower().str
+                              .contains('gotham city',na=False) == False]
+df_tweets_mids = df_tweets_mids[df_tweets_mids.user_location.str.lower().str
+                                .contains('gotham city',na=False) == False]
 
 df_tweets_eng.to_csv('{0}/df_tweets_eng.csv'.format(tweet_folder))
 df_tweets_mids.to_csv('{0}/df_tweets_mids.csv'.format(tweet_folder))
