@@ -29,8 +29,7 @@ from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 #%% Read in data
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 basefile = 'INDP/Models/Initial_models'
