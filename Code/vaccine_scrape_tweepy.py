@@ -10,8 +10,7 @@ vaccine-related Tweets from the last 9 days.
 from os import chdir, getcwd
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 from INDP.Code import TweepyScrape
