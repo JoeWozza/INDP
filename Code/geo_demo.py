@@ -9,8 +9,7 @@ algorithm, to demonstrate how the algorithm works in the project report.
 from os import chdir, getcwd
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4")
 chdir(filepath)
 
 from INDP.Code import CircleApprox
