@@ -17,8 +17,7 @@ from itertools import product
 from os import chdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 from INDP.Code import LSTM
@@ -121,7 +120,7 @@ fig, ax = plt.subplots(figsize = (12,6))
 fig = sns.lineplot(data=df_snt_rolling, x='tweet_date', y='mean', ax=ax, 
                    color='#007C91')
 ax.set(xlabel = 'Tweet date',
-       ylabel = '{wind}-day rolling average sentiment score')
+       ylabel = '{0}-day rolling average sentiment score'.format(wind))
 ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', color='#00AB8E',
            label='Pfizer vaccine approved by MHRA')
 ax.axvline(pd.to_datetime('2020-12-08'), linestyle='dashed', color='#00AB8E',
@@ -139,6 +138,7 @@ ax.axvline(pd.to_datetime('2021-11-12'), linestyle='dotted', color='#00AB8E',
 ax.axvline(pd.to_datetime('2021-11-27'), linestyle='dashdot', color='#E40046',
            label='First case of Omicron variant identified in UK')
 ax.legend(loc=(1.05,0))
+plt.xticks(rotation=30)
 plt.tight_layout()
 plt.savefig("{0}/LSTM_snt_sentiment_roll{1}.png".format(finalmodel_folder,
             wind))
@@ -147,7 +147,7 @@ plt.savefig("{0}/LSTM_snt_sentiment_roll{1}.png".format(finalmodel_folder,
 g = sns.relplot(data=df_snt_day_search_term, x='tweet_date', y='mean', 
                 col='search_term', col_wrap=5, kind='line', color='#007C91')
 g.set_axis_labels(x_var = 'Tweet date', 
-                  y_var = 'Mean sentiment score')
+                  y_var = '{0}-day rolling average sentiment score'.format(wind))
 g.set_titles(col_template = 'Search term: {col_name}')
 g.fig.suptitle('Sentiment scores over time, by search term')
 g.tight_layout()
@@ -162,12 +162,14 @@ for utla in utlas:
     df_snt_rolling['area'] = utla
     df_snt_day_utla = df_snt_day_utla.append(df_snt_rolling)
 
+df_snt_day_utla = df_snt_day_utla.reset_index()
+
 g = sns.relplot(data=df_snt_day_utla, x='tweet_date', y='mean', col='area', 
-                col_wrap=5, kind='line', palette=['#007C91','#582C83'], 
+                col_wrap=4, kind='line', palette=['#007C91','#582C83'], 
                                                   hue='area_type')
 g.set_axis_labels(x_var = 'Tweet date', 
-                  y_var = '{wind}-day rolling average sentiment score')
-g.set_titles(col_template = '{col_name}')
+                  y_var = '{0}-day rolling average sentiment score'.format(wind))
+g.set_titles(col_template = '{col_name}', size=20)
 g.set_xticklabels(rotation=30)
 for i,ax in enumerate(g.axes.flat):
     ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', 
@@ -195,7 +197,7 @@ for i,ax in enumerate(g.axes.flat):
                label='First case of Omicron variant identified in UK')
     if i == len(g.axes.flat)-1:
         ax.legend(loc=(-3,-0.5))
-g._legend.set_title("Average")
+g._legend.set_title("Area")
 g.tight_layout()
 g.savefig("{0}/LSTM_snt_sentiment_roll{1}_UTLAs.png".format(finalmodel_folder,
           wind))
@@ -270,7 +272,7 @@ fig = sns.lineplot(data=df_snt_day_cat_roll, x='tweet_date', y='date_cat_prop',
                    ax=ax, palette=['#007C91','#FF7F32','#E40046'], 
                                    hue='LSTM_sent_cat')
 ax.set(xlabel = 'Tweet date',
-       ylabel = 'Proportion of tweets in sentiment category')
+       ylabel = '{0}-day rolling proportion of tweets in sentiment category'.format(wind))
 ax.axvline(pd.to_datetime('2020-11-02'), linestyle='solid', color='#00AB8E',
            label='Pfizer vaccine approved by MHRA')
 ax.axvline(pd.to_datetime('2020-12-08'), linestyle='dashed', color='#00AB8E',
