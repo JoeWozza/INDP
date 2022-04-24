@@ -34,8 +34,8 @@ if not os.path.exists(tweets_folder):
 
 # Keys from here: https://developer.twitter.com/en/portal/projects/
 # 1475494865567899649/apps/new
-consumer_key = 'OPqZPaFbJHx8sXf8y7C5umylY'
-consumer_secret = 'qE6FdosS3aiSHNDcamEhxcGCxl40k4oKoPNoVTrrW8IMWkYSkB'
+consumer_key = ''
+consumer_secret = ''
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth, wait_on_rate_limit = True)
