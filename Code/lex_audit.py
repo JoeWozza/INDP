@@ -19,6 +19,9 @@ chdir(filepath)
 import pandas as pd
 import os
 
+from INDP.Code import VADER
+class_v = VADER.VADER()
+
 # Create folder in which to save visualisations
 images_folder = '{0}/INDP/Images'.format(filepath)
 audit_folder = '{0}/INDP/Images/VADER_audit'.format(filepath)
@@ -60,11 +63,21 @@ def cat_sentiment(row):
     else:
         return 'Neutral'
 
-df_VADER['sentiment_cat'] = df_VADER.apply(lambda row: cat_sentiment(row), axis=1)
+df_VADER['sentiment_cat'] = pd.Categorical(df_VADER.apply(
+    lambda row: cat_sentiment(row), axis=1), ['Positive','Neutral','Negative'])
 
 # Join onto other columns
 df_VADER['tweet_id'] = df_VADER['tweet_id'].astype('Int64').apply(str)
-df_VADER = df_VADER.set_index('tweet_id')[['sentiment','sentiment_cat','sentconf']]
+
+# Categorise sentiment confidence score
+mean_cs,std_cs = class_v.cat_sentconf_stats(df_VADER['sentconf'])
+df_VADER['sentconf_cat'] = df_VADER.apply(lambda row:
+                                          class_v.cat_sentconf(
+                                              row['sentconf'],mean_cs,std_cs), 
+                                          axis=1)
+
+df_VADER = df_VADER.set_index('tweet_id')[['sentiment','sentiment_cat',
+                                           'sentconf','sentconf_cat']]
 df_VADER = df_VADER.join(df_tweets_deduped_eng, how = 'right', lsuffix='_l',
                          rsuffix='_r')
 
@@ -83,10 +96,22 @@ plt.savefig("{0}/VADER_sentiment.png".format(audit_folder))
 
 # Plot distribution of sentiment categories
 fig, ax = plt.subplots(figsize = (12,6))
-fig = sns.distplot(df_VADER_unique['sentiment_cat'], ax=ax, color='#007C91', kde_kws={'clip': (-1,1)})                
+fig = sns.histplot(df_VADER_unique['sentiment_cat'], ax=ax, color='#007C91')                
 ax.set(xlabel = 'VADER sentiment category')
 plt.tight_layout()
 plt.savefig("{0}/VADER_sentiment_cat.png".format(audit_folder))
+
+# Plot distribution of sentiment categories by sentiment confidence categories
+g = sns.displot(df_VADER.reset_index(), x='sentiment_cat', col='sentconf_cat')
+pd.crosstab(df_VADER.sentiment_cat, df_VADER.sentconf_cat)
+
+g = sns.FacetGrid(df_VADER.reset_index(), col = 'sentconf_cat', 
+                  col_order=['VeryHigh','High','Low','VeryLow','Zero'])
+g.map(sns.histplot, 'sentiment_cat', color='#007C91')
+g.set_axis_labels(x_var = 'VADER sentiment category')
+g.set_titles(col_template = '{col_name}')
+g.tight_layout()
+g.savefig("{0}/VADER_sentcat_sentconf.png".format(audit_folder))
 
 # Plot distribution of sentiment confidence scores
 fig, ax = plt.subplots(figsize = (12,6))
@@ -124,6 +149,11 @@ ax.set(ylabel = 'Confidence in VADER sentiment score',
 plt.tight_layout()
 plt.savefig("{0}/VADER_sentiment_sentconf.png".format(audit_folder))
 
+print(abs(df_VADER_unique.sentiment).corr(df_VADER_unique.sentconf))
+
+from scipy.stats.stats import pearsonr
+print(pearsonr(abs(df_VADER_unique.sentiment),df_VADER_unique.sentconf.fillna(0)))
+
 # Word clouds by sentiment_cat
 # Wordcloud with stop words excluded
 stopwords=set(STOPWORDS)
@@ -145,6 +175,25 @@ for cat in df_VADER_unique.drop_duplicates(['sentiment_cat'])['sentiment_cat'].t
     plt.imshow(wordcloud_excstopwords)
     plt.axis("off")
     plt.savefig('{0}/VADER_wordcloud_excstopwords_{1}.png'.format(audit_folder,cat))
+
+
+#%% Examples for report
+# Individual Tweets
+eg_VH = df_VADER_unique[df_VADER_unique.sentconf_cat=='VeryHigh'].sample(1)
+eg_H = df_VADER_unique[df_VADER_unique.sentconf_cat=='High'].sample(1)
+eg_L = df_VADER_unique[df_VADER_unique.sentconf_cat=='Low'].sample(1)
+eg_VL = df_VADER_unique[df_VADER_unique.sentconf_cat=='VeryLow'].sample(1)
+eg_Z = df_VADER_unique[df_VADER_unique.sentconf_cat=='Zero'].sample(1)
+
+pd.set_option('display.max_colwidth', None)
+
+print(eg_VH[['tweet_url','sentiment']])
+print(eg_H[['tweet_url','sentiment']])
+print(eg_L[['tweet_url','sentiment']])
+print(eg_VL[['tweet_url','sentiment']])
+print(eg_Z[['tweet_url','sentiment']])
+
+
 
 
 
