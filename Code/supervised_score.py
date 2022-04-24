@@ -23,8 +23,7 @@ from os import chdir, listdir
 import os
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 from INDP.Code import LSTM
@@ -100,3 +99,33 @@ df_tweets_sntwitter['tweet_text_clean'] = X_text_sntwitter
 
 df_tweets_sntwitter.to_csv("{0}/df_sntwitter_LSTM_sent.csv".format(
         lstm_folder))
+
+#%% Score on TweePy England data
+
+# Define common string at start of file names
+filestring_eng = 'df_tweets_eng_tweepy_'
+# Get list of all files containing common string
+tweets_files_eng = [s for s in files if filestring_eng in s]
+# Combine data into single dataframe
+df_tweets_eng = pd.DataFrame()
+for f in tweets_files_eng:
+    print(f)
+    df_tweets_eng = df_tweets_eng.append(pd.read_csv("INDP/Data/Tweets/{0}".format(f)))
+
+# Deduplicate by tweet_id and UTLA
+df_tweets_eng_deduped = (df_tweets_eng
+                         .drop_duplicates(subset=['tweet_id','area'])
+                         .reset_index().drop(columns=['index','Unnamed: 0']))
+
+df_tweets_eng_deduped['tweet_id'] = df_tweets_eng_deduped['tweet_id'].astype('Int64').apply(str)
+
+# VADER cleaning: remove twitter handles, URLs and most special characters
+X_text_eng = df_tweets_eng_deduped['tweet_text'].apply(class_v.clean)
+# LSTM cleaning: lemmatisation and tokenisation
+X_eng = class_lstm.score_prep(X_text_eng,tokenizer,100)
+# Score model on Midlands tweets
+df_tweets_eng_deduped['LSTM_sent'] = model.predict(X_eng)
+df_tweets_eng_deduped['tweet_text_clean'] = X_text_eng
+
+df_tweets_eng_deduped.to_csv("{0}/df_tweepy_eng_LSTM_sent.csv".format(lstm_folder))
+
