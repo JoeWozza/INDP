@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Sep  6 19:30:55 2021
+This script uses the CircleApprox class from CircleApprox.py to produce
+approximations of geographical areas using overlapping circles.
 
-@author: Joe.WozniczkaWells
+@author: Joe Wozniczka-Wells
 """
 
 # GEOCODING: approximating UTLAs of the Midlands using circles

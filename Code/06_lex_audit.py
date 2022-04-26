@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This code is used to investigate the output from Code/lexicon.py.
+This code is used to investigate the output from Code/05_lexicon.py.
 
 @author: Joe Wozniczka-Wells
 """

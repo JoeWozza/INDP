@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-This code is used to audit the England Tweets dataset
+This code is used to audit the Midlands Tweets dataset.
 
 @author: Joe.WozniczkaWells
 """
