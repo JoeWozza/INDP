@@ -17,3 +17,5 @@ The scripts should be run in the following order:
 11. 09a_final_model_evaluation.py: This code is used to compare the output from the final model to the VADER sentiment scores and evaluate the performance of the model.
 12. 09b_final_model_tweepy.py: This code is used to investigate the output from the final model on the Tweets downloaded using TweePy. This includes producing visualisations for the final report.
 13. 09c_final_model_sntwitter.py: This code is used to investigate the output from the final model on the Tweets downloaded using sntwitter. This includes producing visualisations for the  final report.
+
+The scripts whose names begin with 'XX_' were used on an ad-hoc basis in the creation of this project and are included for context. The remaining scripts contain classes and functions that are used in the numbered scripts.
