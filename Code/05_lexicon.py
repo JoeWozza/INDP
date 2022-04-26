@@ -9,8 +9,7 @@ confidence scores (0 to 1) for Tweets captured in several dated csv files.
 from os import chdir, getcwd,listdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
 # Load packages

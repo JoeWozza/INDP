@@ -10,12 +10,11 @@ day the code is executed.
 from os import chdir
 
 # Set file path
-filepath = ("C:\\Users\\Joe.WozniczkaWells\\Documents\\Apprenticeship\\UoB\\"
-            "SPFINDP21T4\\")
+filepath = ("C:\\Users\\joew\\Documents\\Apprenticeship\\UoB\\SPFINDP21T4\\")
 chdir(filepath)
 
-from INDP.Code import sntwitterScrape
-class_ts = sntwitterScrape.TweetScrape()
+from INDP.Code import SntwitterScrape
+class_ts = SntwitterScrape.TweetScrape()
 
 import pandas as pd
 import snscrape.modules.twitter as sntwitter
